@@ -14,3 +14,7 @@ var (
 type DSigCtx struct {
 	ptr *C.xmlSecDSigCtx
 }
+
+type Key struct {
+	ptr *C.xmlSecKey
+}

@@ -143,14 +143,34 @@ func xmlSecCryptoAppKeyLoad(file string, format KeyDataFormat) (*Key, error) {
 	return &Key{ptr: key}, nil
 }
 
-func (ctx *DSigCtx) SetKey(key *Key) error {
-	ptr := ctx.ptr
+func (d *DSigCtx) SetKey(key *Key) error {
+	ptr := d.ptr
 	if ptr == nil {
 		return ErrInvalidDSigCtx
 	}
 
 	ptr.signKey = key.ptr
 	return nil
+}
+
+func xmlSecDSigCtxSignRaw(ctxptr *C.xmlSecDSigCtx, nodeptr *C.xmlNode) error {
+	if C.xmlSecDSigCtxSign(ctxptr, nodeptr) < C.int(0) {
+		return errors.New("failed to sign node")
+	}
+	return nil
+}
+
+func xmlSecDSigCtxSignNode(ctx *DSigCtx, n libxml2.Node) error {
+	nodeptr := (*C.xmlNode)(n.Pointer())
+	if nodeptr == nil {
+		return libxml2.ErrInvalidNode
+	}
+
+	ctxptr := ctx.ptr
+	if ctxptr == nil {
+		return ErrInvalidDSigCtx
+	}
+	return xmlSecDSigCtxSignRaw(ctxptr, nodeptr)
 }
 
 func xmlSecDSigCtxSignDocument(ctx *DSigCtx, doc *libxml2.Document) error {
@@ -164,13 +184,13 @@ func xmlSecDSigCtxSignDocument(ctx *DSigCtx, doc *libxml2.Document) error {
 		return libxml2.ErrNodeNotFound
 	}
 
-	ret := C.xmlSecFindNode(
+	nodeptr := C.xmlSecFindNode(
 		rootptr,
 		stringToXmlChar(SignatureNode),
 		stringToXmlChar(DSigNs),
 	)
 
-	if ret == nil {
+	if nodeptr == nil {
 		return errors.New("failed to find start node")
 	}
 
@@ -179,10 +199,31 @@ func xmlSecDSigCtxSignDocument(ctx *DSigCtx, doc *libxml2.Document) error {
 		return ErrInvalidDSigCtx
 	}
 
-	if C.xmlSecDSigCtxSign(ctxptr, ret) < C.int(0) {
-		return errors.New("failed to sign node")
+	return xmlSecDSigCtxSignRaw(ctxptr, nodeptr)
+}
+
+func xmlSecDSigCtxVerifyRaw(ctxptr *C.xmlSecDSigCtx, nodeptr *C.xmlNode) error {
+	if C.xmlSecDSigCtxVerify(ctxptr, nodeptr) < C.int(0) {
+		return errors.New("failed to verify node")
+	}
+
+	if ctxptr.status != C.xmlSecDSigStatusSucceeded {
+		return errors.New("signature verification failed")
 	}
 	return nil
+}
+
+func xmlSecDSigCtxVerifyNode(ctx *DSigCtx, n libxml2.Node) error {
+	nodeptr := (*C.xmlNode)(n.Pointer())
+	if nodeptr == nil {
+		return libxml2.ErrInvalidNode
+	}
+
+	ctxptr := ctx.ptr
+	if ctxptr == nil {
+		return ErrInvalidDSigCtx
+	}
+	return xmlSecDSigCtxVerifyRaw(ctxptr, nodeptr)
 }
 
 func xmlSecDSigCtxVerifyDocument(ctx *DSigCtx, doc *libxml2.Document) error {
@@ -196,12 +237,12 @@ func xmlSecDSigCtxVerifyDocument(ctx *DSigCtx, doc *libxml2.Document) error {
 		return libxml2.ErrNodeNotFound
 	}
 
-	ret := C.xmlSecFindNode(
+	nodeptr := C.xmlSecFindNode(
 		rootptr,
 		stringToXmlChar(SignatureNode),
 		stringToXmlChar(DSigNs),
 	)
-	if ret == nil {
+	if nodeptr == nil {
 		return errors.New("failed to find start node")
 	}
 
@@ -209,14 +250,6 @@ func xmlSecDSigCtxVerifyDocument(ctx *DSigCtx, doc *libxml2.Document) error {
 	if ctxptr == nil {
 		return ErrInvalidDSigCtx
 	}
-
-	if C.xmlSecDSigCtxVerify(ctxptr, ret) < C.int(0) {
-		return errors.New("failed to verify node")
-	}
-
-	if ctxptr.status != C.xmlSecDSigStatusSucceeded {
-		return errors.New("signature verification failed")
-	}
-	return nil
+	return xmlSecDSigCtxVerifyRaw(ctxptr, nodeptr)
 }
 

@@ -1,0 +1,9 @@
+language: go
+go:
+  - 1.5
+  - tip
+sudo: false
+addons:
+  apt:
+    packages:
+      - xmlsec1

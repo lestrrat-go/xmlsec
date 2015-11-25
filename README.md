@@ -1,5 +1,9 @@
 # go-xmlsec
 
+[![Build Status](https://travis-ci.org/lestrrat/go-xmlsec.svg?branch=master)](https://travis-ci.org/lestrrat/go-xmlsec)
+
+[![GoDoc](https://godoc.org/github.com/lestrrat/go-xmlsec?status.svg)](https://godoc.org/github.com/lestrrat/go-xmlsec)
+
 go-xmlsec is a Go binding for XML Security Library (https://www.aleksey.com/xmlsec/index.html)
 
 ## Status

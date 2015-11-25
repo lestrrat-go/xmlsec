@@ -1,3 +1,9 @@
+/*
+Package xmlsec is a Go binding for XML Security Library (https://www.aleksey.com/xmlsec/index.html)
+
+In order to use this library, you need go-libxml2 (https://github.com/lestrrat/go-libxml2)
+*/
+
 package xmlsec
 
 /*

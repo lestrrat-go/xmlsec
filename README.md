@@ -111,6 +111,11 @@ func ExampleDSigCtx_Sign() {
 }
 ```
 
+## See Also
+
+* https://github.com/lestrrat/go-libxml2
+* https://www.aleksey.com/xmlsec/index.html
+
 ## Credits
 
 * Work on this library was generously sponsored by HDE Inc (https://www.hde.co.jp)

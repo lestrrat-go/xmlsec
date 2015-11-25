@@ -111,6 +111,21 @@ func ExampleDSigCtx_Sign() {
 }
 ```
 
+## Caveats
+
+cgo and pkg-config sometimes have problems with quoting. For example, on my local
+machine (OS X 10.10.5 + go 1.5.1), I get this:
+
+```
+shoebill% go test .
+# github.com/lestrrat/go-xmlsec
+In file included from <built-in>:326:
+<command line>:1:24: warning: missing terminating '"' character [-Winvalid-pp-token]
+```
+
+If it annoys you, explicitly specifying `#cgo CFLAGS:` and `#cgo LDFLAGS:` may help,
+but we don't do that in this library because it makes it unportable.
+
 ## See Also
 
 * https://github.com/lestrrat/go-libxml2

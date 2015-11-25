@@ -24,6 +24,47 @@ func TestXmlSec(t *testing.T) {
 	}
 }
 
+func writePemFile(b *pem.Block) (string, error) {
+	pemfile, err := ioutil.TempFile("", "xmlsec-test-")
+	if err != nil {
+		return "", err
+	}
+	defer pemfile.Close()
+
+	if err := pem.Encode(pemfile, b); err != nil {
+		return "", err
+	}
+
+	if err := pemfile.Sync(); err != nil {
+		return "", err
+	}
+
+	return pemfile.Name(), nil
+}
+
+func writePrivateKey(privkey *rsa.PrivateKey) (string, error) {
+	var pemkey = &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privkey),
+	}
+
+	return writePemFile(pemkey)
+}
+
+func writePublicKey(pubkey *rsa.PublicKey) (string, error) {
+	marshaled, err := x509.MarshalPKIXPublicKey(pubkey)
+	if err != nil {
+		return "", err
+	}
+
+	var pemkey = &pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: marshaled,
+	}
+
+	return writePemFile(pemkey)
+}
+
 func TestXmlSecDSigCtx(t *testing.T) {
 	Init()
 	defer Shutdown()
@@ -33,39 +74,19 @@ func TestXmlSecDSigCtx(t *testing.T) {
 		return
 	}
 
-	ctx, err := NewDSigCtx()
-	if !assert.NoError(t, err, "NewDSigCtx should succeed") {
+	privfile, err := writePrivateKey(privkey)
+	if !assert.NoError(t, err, "Writing private key should succeed") {
 		return
 	}
-	defer ctx.Free()
+	defer os.Remove(privfile)
 
-	var pemkey = &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(privkey),
-	}
-
-	pemfile, err := ioutil.TempFile("", "xmlsec-test-")
-	if !assert.NoError(t, err, "TempFile should succeed") {
+	pubfile, err := writePublicKey(&privkey.PublicKey)
+	if !assert.NoError(t, err, "Writing public key should succeed") {
 		return
 	}
-	defer os.Remove(pemfile.Name())
-	defer pemfile.Close()
+	defer os.Remove(pubfile)
 
-	if !assert.NoError(t, pem.Encode(pemfile, pemkey), "Encoding to pem should succeed") {
-		return
-	}
-
-	if !assert.NoError(t, pemfile.Sync(), "Sync should succeed") {
-		return
-	}
-
-	key, err := LoadKeyFromFile(pemfile.Name(), KeyDataFormatPem)
-	if !assert.NoError(t, err, "Loading key should succeed") {
-		return
-	}
-	ctx.SetKey(key)
-
-	p := libxml2.NewParser(libxml2.XmlParseDTDLoad|libxml2.XmlParseDTDAttr|libxml2.XmlParseNoEnt)
+	p := libxml2.NewParser(libxml2.XmlParseDTDLoad | libxml2.XmlParseDTDAttr | libxml2.XmlParseNoEnt)
 	doc, err := p.ParseString(`<?xml version="1.0" encoding="UTF-8"?>
 <!-- XML Security Library example: Simple signature template file for sign1 example.  -->
 <Envelope xmlns="urn:envelope">
@@ -96,9 +117,41 @@ func TestXmlSecDSigCtx(t *testing.T) {
 	}
 	defer doc.Free()
 
-	if !assert.NoError(t, ctx.Sign(doc), "Sign should succeed") {
-		return
+	{
+		ctx, err := NewDSigCtx()
+		if !assert.NoError(t, err, "NewDSigCtx should succeed") {
+			return
+		}
+		defer ctx.Free()
+
+		key, err := LoadKeyFromFile(privfile, KeyDataFormatPem)
+		if !assert.NoError(t, err, "Loading private key '%s' should succeed", privfile) {
+			return
+		}
+		ctx.SetKey(key)
+
+		if !assert.NoError(t, ctx.Sign(doc), "Sign should succeed") {
+			return
+		}
 	}
 
 	t.Logf("%s", doc.Dump(true))
+
+	{
+		ctx, err := NewDSigCtx()
+		if !assert.NoError(t, err, "NewDSigCtx should succeed") {
+			return
+		}
+		defer ctx.Free()
+
+		key, err := LoadKeyFromFile(pubfile, KeyDataFormatPem)
+		if !assert.NoError(t, err, "Loading public key '%s' should succeed", pubfile) {
+			return
+		}
+		ctx.SetKey(key)
+
+		if !assert.NoError(t, ctx.Verify(doc), "Verify should succeed") {
+			return
+		}
+	}
 }

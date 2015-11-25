@@ -13,3 +13,7 @@ func (d *DSigCtx) Free() error {
 func (d *DSigCtx) Sign(doc *libxml2.Document) error {
 	return xmlSecDSigCtxSignDocument(d, doc)
 }
+
+func (d *DSigCtx) Verify(doc *libxml2.Document) error {
+	return xmlSecDSigCtxVerifyDocument(d, doc)
+}

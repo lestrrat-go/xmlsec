@@ -4,17 +4,71 @@ package xmlsec
 #cgo pkg-config: xmlsec1
 #include <stdlib.h>
 #include <libxml/tree.h>
+#include <libxml/xmlstring.h>
+#include <libxslt/xslt.h>
+#include <libxslt/security.h>
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/xmltree.h>
 #include <xmlsec/xmldsig.h>
+#include <xmlsec/transforms.h>
 #include <xmlsec/crypto.h>
 
+static inline xmlChar* to_xmlcharptr(const char *s) {
+  return (xmlChar *) s;
+}
+
+static inline char * to_charptr(const xmlChar *s) {
+  return (char *) s;
+}
+
+static xsltSecurityPrefsPtr xsltSecPrefs = NULL;
+static int
+go_xmlsec_init() {
+  xmlIndentTreeOutput = 1; 
+  xsltSecPrefs = xsltNewSecurityPrefs(); 
+  xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_READ_FILE,        xsltSecurityForbid);
+  xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_WRITE_FILE,       xsltSecurityForbid);
+  xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_CREATE_DIRECTORY, xsltSecurityForbid);
+  xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_READ_NETWORK,     xsltSecurityForbid);
+  xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_WRITE_NETWORK,    xsltSecurityForbid);
+  xsltSetDefaultSecurityPrefs(xsltSecPrefs); 
+
+  if(xmlSecInit() < 0) {
+    return -1;
+  }
+
+  if(xmlSecCheckVersion() != 1) {
+    return -1;
+  }
+
+  if(xmlSecCryptoAppInit(NULL) < 0) {
+    return -1;
+  }
+
+  if(xmlSecCryptoInit() < 0) {
+    fprintf(stderr, "Error: xmlsec-crypto initialization failed.\n");
+    return -1;
+  }
+
+	return 0;
+}
+
+static void
+go_xmlsec_shutdown() {
+  xmlSecCryptoShutdown();
+  xmlSecCryptoAppShutdown();
+  xmlSecShutdown();
+  xsltFreeSecurityPrefs(xsltSecPrefs);
+  xsltCleanupGlobals();
+}
 
 */
 import "C"
 import (
 	"errors"
+	"unsafe"
 
+	_ "github.com/davecgh/go-spew/spew"
 	"github.com/lestrrat/go-libxml2"
 )
 
@@ -33,22 +87,23 @@ const (
 )
 
 func Init() error {
-	if C.xmlSecInit() < C.int(0) {
-		return errors.New("xmlsec initialization failed")
+	if C.go_xmlsec_init() < C.int(0) {
+		return errors.New("failed to initialize")
 	}
-
-	if C.xmlSecCryptoAppInit(nil) < C.int(0) {
-		return errors.New("xmlsec crypt initialization failed")
-	}
-
 	return nil
 }
 
 func Shutdown() error {
-	C.xmlSecCryptoShutdown()
-	C.xmlSecCryptoAppShutdown()
-	C.xmlSecShutdown()
+	C.go_xmlsec_shutdown()
 	return nil
+}
+
+func xmlCharToString(s *C.xmlChar) string {
+	return C.GoString(C.to_charptr(s))
+}
+
+func stringToXmlChar(s string) *C.xmlChar {
+	return C.to_xmlcharptr(C.CString(s))
 }
 
 func xmlSecDSigCtxCreate() (*DSigCtx, error) {
@@ -74,6 +129,11 @@ func xmlSecCryptoAppKeyLoad(file string, format KeyDataFormat) (*Key, error) {
 	if key == nil {
 		return nil, errors.New("failed to load key")
 	}
+
+	if C.xmlSecKeySetName(key, stringToXmlChar(file)) < C.int(0) {
+		return nil, errors.New("failed to set key name")
+	}
+
 	return &Key{ptr: key}, nil
 }
 
@@ -87,13 +147,29 @@ func (ctx *DSigCtx) SetKey(key *Key) error {
 	return nil
 }
 
-func xmlSecDSigCtxSign(ctx *DSigCtx, n libxml2.Node) error {
-	ptr := ctx.ptr
-	if ptr == nil {
+func xmlSecDSigCtxSignDocument(ctx *DSigCtx, doc *libxml2.Document) error {
+	root, err := doc.DocumentElement()
+	if err != nil {
+		return err
+	}
+
+	rootptr := (*C.xmlNode)(unsafe.Pointer(root.Pointer()))
+	if rootptr == nil {
+		return libxml2.ErrNodeNotFound
+	}
+
+	ret := C.xmlSecFindNode(
+		rootptr,
+		stringToXmlChar(SignatureNode),
+		stringToXmlChar(DSigNs),
+	)
+
+	ctxptr := ctx.ptr
+	if ctxptr == nil {
 		return ErrInvalidDSigCtx
 	}
 
-	if C.xmlSecDSigCtxSign(ptr, (*C.xmlNode)(n.Pointer())) < C.int(0) {
+	if C.xmlSecDSigCtxSign(ctxptr, ret) < C.int(0) {
 		return errors.New("failed to sign node")
 	}
 	return nil

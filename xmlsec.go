@@ -130,6 +130,21 @@ func xmlSecDSigCtxDestroy(ctx *DSigCtx) error {
 	return nil
 }
 
+func xmlSecCryptoAppKeyLoadMemory(buf []byte, format KeyDataFormat) (*Key, error) {
+	key := C.xmlSecCryptoAppKeyLoadMemory(
+		(*C.xmlSecByte)(unsafe.Pointer(&buf[0])),
+		(C.xmlSecSize)(C.int(len(buf))),
+		(C.xmlSecKeyDataFormat)(format),
+		nil,
+		nil,
+		nil,
+	)
+	if key == nil {
+		return nil, errors.New("failed to load key")
+	}
+	return &Key{ptr: key}, nil
+}
+
 func xmlSecCryptoAppKeyLoad(file string, format KeyDataFormat) (*Key, error) {
 	key := C.xmlSecCryptoAppKeyLoad(C.CString(file), (C.xmlSecKeyDataFormat)(format), nil, nil, nil)
 	if key == nil {

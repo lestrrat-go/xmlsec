@@ -168,11 +168,17 @@ func TestSignature(t *testing.T) {
 	doc := libxml2.CreateDocument()
 	defer doc.Free()
 
+	message, err := doc.CreateElement("Message")
+	if !assert.NoError(t, err, "CreateElement succeeds") {
+		return
+	}
+	doc.SetDocumentElement(message)
+
 	data, err := doc.CreateElement("Data")
 	if !assert.NoError(t, err, "CreateElement succeeds") {
 		return
 	}
-	doc.SetDocumentElement(data)
+	message.AddChild(data)
 	data.AppendText("Hello, World!")
 
 	sig, err := NewSignature(data, ExclC14N, RsaSha1, "")

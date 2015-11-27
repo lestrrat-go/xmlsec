@@ -19,7 +19,7 @@ func ExampleSignature_Sign() {
 
 	p := libxml2.NewParser(libxml2.XmlParseDTDLoad | libxml2.XmlParseDTDAttr | libxml2.XmlParseNoEnt)
 	doc, err := p.ParseString(`<?xml version="1.0" encoding="UTF-8"?>
-<Data>Hello, World!</Data>`)
+<Message><Data>Hello, World!</Data></Message>`)
 
 	n, err := doc.DocumentElement()
 	if err != nil {

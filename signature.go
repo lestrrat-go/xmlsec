@@ -1,6 +1,11 @@
 package xmlsec
 
-import "github.com/lestrrat/go-libxml2"
+import (
+	"crypto/rsa"
+	"errors"
+
+	"github.com/lestrrat/go-libxml2"
+)
 
 // NewDSigCtx creates a new XML Signature Context
 func NewDSigCtx() (*DSigCtx, error) {
@@ -34,3 +39,65 @@ func (d *DSigCtx) VerifyNode(n libxml2.Node) error {
 	return xmlSecDSigCtxVerifyNode(d, n)
 }
 
+func NewSignature(n libxml2.Node, c14n, sig TransformID, id string) (*Signature, error) {
+	doc, err := n.OwnerDocument()
+	if err != nil {
+		return nil, err
+	}
+
+	signnode, err := xmlSecTmplSignatureCreate(doc, c14n, sig, id)
+	if err != nil {
+		return nil, err
+	}
+
+	n.AddChild(signnode)
+
+	return &Signature{
+		signmethod: sig,
+		signnode:   signnode,
+	}, nil
+}
+
+func (s *Signature) AddReference(digestMethod TransformID, id, uri, nodeType string) error {
+	rn, err := xmlSecTmplSignatureAddReference(s.signnode, digestMethod, id, uri, nodeType)
+	if err != nil {
+		return err
+	}
+
+	s.refnode = rn
+	return nil
+}
+
+func (s *Signature) AddTransform(transformID TransformID) error {
+	if s.refnode == nil {
+		return errors.New("missing reference node: did you call AddReference() first?")
+	}
+
+	_, err := xmlSecTmplReferenceAddTransform(s.refnode, transformID)
+	return err
+}
+
+func (s *Signature) Sign(key interface{}) error {
+	ctx, err := NewDSigCtx()
+	if err != nil {
+		return err
+	}
+	defer ctx.Free()
+
+	var seckey *Key
+	switch s.signmethod {
+	case RsaSha1:
+		seckey, err = LoadKeyFromRSAPrivateKey(key.(*rsa.PrivateKey))
+		if err != nil {
+			return err
+		}
+	default:
+		return ErrInvalidKeyType
+	}
+
+	if err := ctx.SetKey(seckey); err != nil {
+		return err
+	}
+
+	return ctx.SignNode(s.signnode)
+}

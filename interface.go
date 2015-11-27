@@ -15,10 +15,15 @@ static inline xmlSecTransformId MY_RsaSha1Id() {
 
 */
 import "C"
-import "errors"
+import (
+	"errors"
+
+	"github.com/lestrrat/go-libxml2"
+)
 
 var (
 	ErrInvalidDSigCtx = errors.New("invalid dsig context")
+	ErrInvalidKeyType = errors.New("invalid key type")
 )
 
 const (
@@ -44,3 +49,9 @@ var (
 	Sha1      = TransformID{ptr: C.MY_Sha1Id()}
 	RsaSha1   = TransformID{ptr: C.MY_RsaSha1Id()}
 )
+
+type Signature struct {
+	refnode    libxml2.Node
+	signmethod TransformID
+	signnode   libxml2.Node
+}

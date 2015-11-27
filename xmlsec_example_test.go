@@ -13,6 +13,45 @@ import (
 	"github.com/lestrrat/go-xmlsec"
 )
 
+func ExampleSignature_Sign() {
+	xmlsec.Init()
+	defer xmlsec.Shutdown()
+
+	p := libxml2.NewParser(libxml2.XmlParseDTDLoad | libxml2.XmlParseDTDAttr | libxml2.XmlParseNoEnt)
+	doc, err := p.ParseString(`<?xml version="1.0" encoding="UTF-8"?>
+<Data>Hello, World!</Data>`)
+
+	n, err := doc.DocumentElement()
+	if err != nil {
+		log.Printf("DocumentElement failed: %s", err)
+		return
+	}
+
+	// n is the node where you want your signature to be
+	// generated under
+	sig, err := xmlsec.NewSignature(n, xmlsec.ExclC14N, xmlsec.RsaSha1, "")
+	if err != nil {
+		log.Printf("failed to create signature: %s", err)
+		return
+	}
+
+	sig.AddReference(xmlsec.Sha1, "", "", "")
+	sig.AddTransform(xmlsec.Enveloped)
+
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		log.Printf("failed to generate key: %s", err)
+		return
+	}
+
+	if err := sig.Sign(key); err != nil {
+		log.Printf("failed to sign: %s", err)
+		return
+	}
+
+	log.Printf("%s", doc.Dump(true))
+}
+
 func ExampleDSigCtx_Sign() {
 	xmlsec.Init()
 	defer xmlsec.Shutdown()

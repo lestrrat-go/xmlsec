@@ -156,23 +156,39 @@ func TestXmlSecDSigCtx(t *testing.T) {
 	}
 }
 
-func TestTmplSignatureCreate(t *testing.T) {
+func TestSignature(t *testing.T) {
+	Init()
+	defer Shutdown()
+
+	privkey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if !assert.NoError(t, err, "Generating private key should succeed") {
+		return
+	}
+
 	doc := libxml2.CreateDocument()
 	defer doc.Free()
 
-	n, err := xmlSecTmplSignatureCreate(doc, ExclC14N, RsaSha1, "")
-	if !assert.NoError(t, err, "TmplSignatureCreate succeeds") {
+	data, err := doc.CreateElement("Data")
+	if !assert.NoError(t, err, "CreateElement succeeds") {
 		return
 	}
-	doc.SetDocumentElement(n)
+	doc.SetDocumentElement(data)
+	data.AppendText("Hello, World!")
 
-	rn, err := xmlSecTmplSignatureAddReference(n, Sha1, "", "", "")
-	if !assert.NoError(t, err, "TmplSignatureAddReference succeeds") {
+	sig, err := NewSignature(data, ExclC14N, RsaSha1, "")
+	if !assert.NoError(t, err, "NewSignature succeeds") {
 		return
 	}
 
-	_, err = xmlSecTmplReferenceAddTransform(rn, Enveloped)
-	if !assert.NoError(t, err, "TmplReferenceAddTransform succeeds") {
+	if !assert.NoError(t, sig.AddReference(Sha1, "", "", ""), "AddReference succeeds") {
+		return
+	}
+
+	if !assert.NoError(t, sig.AddTransform(Enveloped), "AddTransform succeeds") {
+		return
+	}
+
+	if !assert.NoError(t, sig.Sign(privkey), "Sign succeeds") {
 		return
 	}
 

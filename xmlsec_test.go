@@ -155,3 +155,26 @@ func TestXmlSecDSigCtx(t *testing.T) {
 		}
 	}
 }
+
+func TestTmplSignatureCreate(t *testing.T) {
+	doc := libxml2.CreateDocument()
+	defer doc.Free()
+
+	n, err := xmlSecTmplSignatureCreate(doc, ExclC14N, RsaSha1, "")
+	if !assert.NoError(t, err, "TmplSignatureCreate succeeds") {
+		return
+	}
+	doc.SetDocumentElement(n)
+
+	rn, err := xmlSecTmplSignatureAddReference(n, Sha1, "", "", "")
+	if !assert.NoError(t, err, "TmplSignatureAddReference succeeds") {
+		return
+	}
+
+	_, err = xmlSecTmplReferenceAddTransform(rn, Enveloped)
+	if !assert.NoError(t, err, "TmplReferenceAddTransform succeeds") {
+		return
+	}
+
+	t.Logf("%s", doc.Dump(true))
+}

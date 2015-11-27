@@ -2,7 +2,17 @@ package xmlsec
 
 /*
 #cgo pkg-config: xmlsec1
+#include <xmlsec/crypto.h>
 #include <xmlsec/xmldsig.h>
+
+static inline xmlSecTransformId MY_Sha1Id() {
+	return xmlSecTransformSha1Id;
+}
+
+static inline xmlSecTransformId MY_RsaSha1Id() {
+	return xmlSecTransformRsaSha1Id;
+}
+
 */
 import "C"
 import "errors"
@@ -23,3 +33,14 @@ type DSigCtx struct {
 type Key struct {
 	ptr *C.xmlSecKey
 }
+
+type TransformID struct {
+	ptr C.xmlSecTransformId
+}
+
+var (
+	ExclC14N  = TransformID{ptr: C.xmlSecTransformExclC14NGetKlass()}
+	Enveloped = TransformID{ptr: C.xmlSecTransformEnvelopedGetKlass()}
+	Sha1      = TransformID{ptr: C.MY_Sha1Id()}
+	RsaSha1   = TransformID{ptr: C.MY_RsaSha1Id()}
+)

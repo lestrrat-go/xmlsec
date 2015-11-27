@@ -16,6 +16,7 @@ package xmlsec
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/xmltree.h>
 #include <xmlsec/xmldsig.h>
+#include <xmlsec/templates.h>
 #include <xmlsec/transforms.h>
 #include <xmlsec/crypto.h>
 
@@ -268,3 +269,73 @@ func xmlSecDSigCtxVerifyDocument(ctx *DSigCtx, doc *libxml2.Document) error {
 	return xmlSecDSigCtxVerifyRaw(ctxptr, nodeptr)
 }
 
+func xmlSecTmplSignatureCreate(doc *libxml2.Document, c14nMethod TransformID, signMethod TransformID, id string) (libxml2.Node, error) {
+	docptr := (*C.xmlDoc)(doc.Pointer())
+	if docptr == nil {
+		return nil, libxml2.ErrInvalidDocument
+	}
+
+	var idxml *C.xmlChar
+	if id != "" {
+		idxml = stringToXmlChar(id)
+	}
+	ptr := C.xmlSecTmplSignatureCreate(
+		docptr,
+		c14nMethod.ptr,
+		signMethod.ptr,
+		idxml,
+	)
+	if ptr == nil {
+		return nil, errors.New("failed to create signature template")
+	}
+
+	return libxml2.WrapToNodeUnsafe(unsafe.Pointer(ptr))
+}
+
+func xmlSecTmplSignatureAddReference(signode libxml2.Node, digestMethod TransformID, id, uri, nodeType string) (libxml2.Node, error) {
+	nptr := (*C.xmlNode)(signode.Pointer())
+	if nptr == nil {
+		return nil, libxml2.ErrInvalidNode
+	}
+
+	var idxml, urixml, typexml *C.xmlChar
+	if id != "" {
+		idxml = stringToXmlChar(id)
+	}
+	if uri != "" {
+		urixml = stringToXmlChar(uri)
+	}
+	if nodeType != "" {
+		typexml = stringToXmlChar(nodeType)
+	}
+
+	ptr := C.xmlSecTmplSignatureAddReference(
+		nptr,
+		digestMethod.ptr,
+		idxml,
+		urixml,
+		typexml,
+	)
+	if ptr == nil {
+		return nil, errors.New("failed to add reference")
+	}
+
+	return libxml2.WrapToNodeUnsafe(unsafe.Pointer(ptr))
+}
+
+func xmlSecTmplReferenceAddTransform(n libxml2.Node, transformId TransformID) (libxml2.Node, error) {
+	nptr := (*C.xmlNode)(n.Pointer())
+	if nptr == nil {
+		return nil, libxml2.ErrInvalidNode
+	}
+
+	ptr := C.xmlSecTmplReferenceAddTransform(
+		nptr,
+		transformId.ptr,
+	)
+	if ptr == nil {
+		return nil, errors.New("failed to add transform")
+	}
+
+	return libxml2.WrapToNodeUnsafe(unsafe.Pointer(ptr))
+}

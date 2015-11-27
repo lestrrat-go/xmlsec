@@ -181,7 +181,7 @@ func TestSignature(t *testing.T) {
 	message.AddChild(data)
 	data.AppendText("Hello, World!")
 
-	sig, err := NewSignature(data, ExclC14N, RsaSha1, "")
+	sig, err := NewSignature(message, ExclC14N, RsaSha1, "")
 	if !assert.NoError(t, err, "NewSignature succeeds") {
 		return
 	}

@@ -75,7 +75,6 @@ import (
 	"errors"
 	"unsafe"
 
-	_ "github.com/davecgh/go-spew/spew"
 	"github.com/lestrrat/go-libxml2"
 )
 

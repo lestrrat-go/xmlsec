@@ -8,6 +8,7 @@ go-xmlsec is a Go binding for XML Security Library (https://www.aleksey.com/xmls
 
 ## Status
 
+* API still unstable.
 * There's enough code to generate signatures for a libxml2 Document, and to verify it, but not much else.
 * PRs, suggestions for more coverage welcome.
 

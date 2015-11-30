@@ -109,7 +109,7 @@ func xmlCharToString(s *C.xmlChar) string {
 	return C.GoString(C.to_charptr(s))
 }
 
-func stringToXmlChar(s string) *C.xmlChar {
+func stringToXMLChar(s string) *C.xmlChar {
 	return C.to_xmlcharptr(C.CString(s))
 }
 
@@ -179,7 +179,7 @@ func xmlSecCryptoAppKeyLoad(file string, format KeyDataFormat) (*Key, error) {
 		return nil, errors.New("failed to load key")
 	}
 
-	if C.xmlSecKeySetName(key, stringToXmlChar(file)) < C.int(0) {
+	if C.xmlSecKeySetName(key, (*C.xmlChar)(unsafe.Pointer(cfile))) < C.int(0) {
 		return nil, errors.New("failed to set key name")
 	}
 
@@ -233,12 +233,12 @@ func xmlSecDSigCtxSignDocument(ctx *DSigCtx, doc *libxml2.Document) error {
 		return err
 	}
 
-	nodeptr := C.xmlSecFindNode(
-		rootptr,
-		stringToXmlChar(SignatureNode),
-		stringToXmlChar(DSigNs),
-	)
+	cname := stringToXMLChar(SignatureNode)
+	cns := stringToXMLChar(DSigNs)
+	defer C.free(unsafe.Pointer(cname))
+	defer C.free(unsafe.Pointer(cns))
 
+	nodeptr := C.xmlSecFindNode(rootptr, cname, cns)
 	if nodeptr == nil {
 		return errors.New("failed to find start node")
 	}
@@ -287,11 +287,12 @@ func xmlSecDSigCtxVerifyDocument(ctx *DSigCtx, doc *libxml2.Document) error {
 		return err
 	}
 
-	nodeptr := C.xmlSecFindNode(
-		rootptr,
-		stringToXmlChar(SignatureNode),
-		stringToXmlChar(DSigNs),
-	)
+	cname := stringToXMLChar(SignatureNode)
+	cns := stringToXMLChar(DSigNs)
+	defer C.free(unsafe.Pointer(cname))
+	defer C.free(unsafe.Pointer(cns))
+
+	nodeptr := C.xmlSecFindNode(rootptr, cname, cns)
 	if nodeptr == nil {
 		return errors.New("failed to find start node")
 	}
@@ -307,7 +308,8 @@ func xmlSecTmplSignatureCreate(doc *libxml2.Document, c14nMethod TransformID, si
 
 	var idxml *C.xmlChar
 	if id != "" {
-		idxml = stringToXmlChar(id)
+		idxml = stringToXMLChar(id)
+		defer C.free(unsafe.Pointer(idxml))
 	}
 	ptr := C.xmlSecTmplSignatureCreate(
 		docptr,
@@ -330,13 +332,16 @@ func xmlSecTmplSignatureAddReference(signode libxml2.Node, digestMethod Transfor
 
 	var idxml, urixml, typexml *C.xmlChar
 	if id != "" {
-		idxml = stringToXmlChar(id)
+		idxml = stringToXMLChar(id)
+		defer C.free(unsafe.Pointer(idxml))
 	}
 	if uri != "" {
-		urixml = stringToXmlChar(uri)
+		urixml = stringToXMLChar(uri)
+		defer C.free(unsafe.Pointer(urixml))
 	}
 	if nodeType != "" {
-		typexml = stringToXmlChar(nodeType)
+		typexml = stringToXMLChar(nodeType)
+		defer C.free(unsafe.Pointer(typexml))
 	}
 
 	ptr := C.xmlSecTmplSignatureAddReference(
@@ -377,7 +382,7 @@ func xmlSecTmplSignatureEnsureKeyInfo(n libxml2.Node, id string) (libxml2.Node, 
 	}
 	var idc *C.xmlChar
 	if id != "" {
-		idc = stringToXmlChar(id)
+		idc = stringToXMLChar(id)
 		defer C.free(unsafe.Pointer(idc))
 	}
 

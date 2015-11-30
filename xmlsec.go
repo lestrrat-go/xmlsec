@@ -126,6 +126,19 @@ func validNodePtr(n libxml2.Node) (*C.xmlNode, error) {
 	return nptr, nil
 }
 
+func validKeyPtr(key *Key) (*C.xmlSecKey, error) {
+	if key == nil {
+		return nil, ErrInvalidKey
+	}
+
+	keyptr := key.ptr
+	if keyptr == nil {
+		return nil, ErrInvalidKey
+	}
+
+	return keyptr, nil
+}
+
 func xmlSecDSigCtxCreate() (*DSigCtx, error) {
 	ctx := C.xmlSecDSigCtxCreate(nil)
 	if ctx == nil {
@@ -408,4 +421,17 @@ func xmlSecTmplKeyInfoAddX509Data(n libxml2.Node) (libxml2.Node, error) {
 	return libxml2.WrapToNodeUnsafe(unsafe.Pointer(ret))
 }
 
-//func xmlSecCryptoAppKeyCertLoad(ctx *DSigCtx, certFile string, format KeyDataFormat) error {
+func xmlSecCryptoAppKeyCertLoad(key *Key, certFile string, format KeyDataFormat) error {
+	keyptr, err := validKeyPtr(key)
+	if err != nil {
+		return err
+	}
+
+	ccert := C.CString(certFile)
+	defer C.free(unsafe.Pointer(ccert))
+
+	if C.xmlSecCryptoAppKeyCertLoad(keyptr, ccert, (C.xmlSecKeyDataFormat)(format)) < 0 {
+		return errors.New("failed to load cert file")
+	}
+	return nil
+}

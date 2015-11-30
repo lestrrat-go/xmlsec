@@ -1,7 +1,6 @@
 package xmlsec
 
 import (
-	"crypto/rsa"
 	"errors"
 
 	"github.com/lestrrat/go-libxml2"
@@ -99,25 +98,14 @@ func (s *Signature) AddX509Data() error {
 	return nil
 }
 
-func (s *Signature) Sign(key interface{}) error {
+func (s *Signature) Sign(key *Key) error {
 	ctx, err := NewDSigCtx()
 	if err != nil {
 		return err
 	}
 	defer ctx.Free()
 
-	var seckey *Key
-	switch s.signmethod {
-	case RsaSha1:
-		seckey, err = LoadKeyFromRSAPrivateKey(key.(*rsa.PrivateKey))
-		if err != nil {
-			return err
-		}
-	default:
-		return ErrInvalidKeyType
-	}
-
-	if err := ctx.SetKey(seckey); err != nil {
+	if err := ctx.SetKey(key); err != nil {
 		return err
 	}
 

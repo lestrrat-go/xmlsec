@@ -23,6 +23,7 @@ import (
 
 var (
 	ErrInvalidDSigCtx = errors.New("invalid dsig context")
+	ErrInvalidKey     = errors.New("invalid key")
 	ErrInvalidKeyType = errors.New("invalid key type")
 )
 

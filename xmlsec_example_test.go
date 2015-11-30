@@ -38,12 +38,13 @@ func ExampleSignature_Sign() {
 	sig.AddReference(xmlsec.Sha1, "", "", "")
 	sig.AddTransform(xmlsec.Enveloped)
 
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	privkey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		log.Printf("failed to generate key: %s", err)
 		return
 	}
 
+	key, err := xmlsec.LoadKeyFromRSAPrivateKey(privkey)
 	if err := sig.Sign(key); err != nil {
 		log.Printf("failed to sign: %s", err)
 		return

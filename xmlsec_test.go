@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/lestrrat/go-libxml2"
@@ -160,11 +161,6 @@ func TestSignature(t *testing.T) {
 	Init()
 	defer Shutdown()
 
-	privkey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if !assert.NoError(t, err, "Generating private key should succeed") {
-		return
-	}
-
 	doc := libxml2.CreateDocument()
 	defer doc.Free()
 
@@ -202,7 +198,16 @@ func TestSignature(t *testing.T) {
 		return
 	}
 
-	if !assert.NoError(t, sig.Sign(privkey), "Sign succeeds") {
+	keyfile := filepath.Join("test", "key.pem")
+	certfile := filepath.Join("test", "cert.pem")
+	key, err := LoadKeyFromFile(keyfile, KeyDataFormatPem)
+	if !assert.NoError(t, err, "Load key from file succeeds") {
+		return
+	}
+
+	key.LoadCertFromFile(certfile, KeyDataFormatPem)
+
+	if !assert.NoError(t, sig.Sign(key), "Sign succeeds") {
 		return
 	}
 

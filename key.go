@@ -28,3 +28,7 @@ func LoadKeyFromRSAPrivateKey(privkey *rsa.PrivateKey) (*Key, error) {
 
 	return LoadKeyFromBytes(buf.Bytes(), KeyDataFormatPem)
 }
+
+func (k *Key) LoadCertFromFile(fn string, format KeyDataFormat) error {
+	return xmlSecCryptoAppKeyCertLoad(k, fn, format)
+}

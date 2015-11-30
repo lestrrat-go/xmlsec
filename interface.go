@@ -51,6 +51,7 @@ var (
 )
 
 type Signature struct {
+	keyinfo    libxml2.Node
 	refnode    libxml2.Node
 	signmethod TransformID
 	signnode   libxml2.Node

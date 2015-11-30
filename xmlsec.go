@@ -10,6 +10,7 @@ package xmlsec
 #cgo pkg-config: xmlsec1
 #include <stdlib.h>
 #include <libxml/tree.h>
+#include <libxml/xmlerror.h>
 #include <libxml/xmlstring.h>
 #include <libxslt/xslt.h>
 #include <libxslt/security.h>
@@ -31,14 +32,14 @@ static inline char * to_charptr(const xmlChar *s) {
 static xsltSecurityPrefsPtr xsltSecPrefs = NULL;
 static int
 go_xmlsec_init() {
-  xmlIndentTreeOutput = 1; 
-  xsltSecPrefs = xsltNewSecurityPrefs(); 
+  xmlIndentTreeOutput = 1;
+  xsltSecPrefs = xsltNewSecurityPrefs();
   xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_READ_FILE,        xsltSecurityForbid);
   xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_WRITE_FILE,       xsltSecurityForbid);
   xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_CREATE_DIRECTORY, xsltSecurityForbid);
   xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_READ_NETWORK,     xsltSecurityForbid);
   xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_WRITE_NETWORK,    xsltSecurityForbid);
-  xsltSetDefaultSecurityPrefs(xsltSecPrefs); 
+  xsltSetDefaultSecurityPrefs(xsltSecPrefs);
 
   if(xmlSecInit() < 0) {
     return -1;
@@ -112,6 +113,19 @@ func stringToXmlChar(s string) *C.xmlChar {
 	return C.to_xmlcharptr(C.CString(s))
 }
 
+func validNodePtr(n libxml2.Node) (*C.xmlNode, error) {
+	if n == nil {
+		return nil, libxml2.ErrInvalidNode
+	}
+
+	nptr := (*C.xmlNode)(n.Pointer())
+	if nptr == nil {
+		return nil, libxml2.ErrInvalidNode
+	}
+
+	return nptr, nil
+}
+
 func xmlSecDSigCtxCreate() (*DSigCtx, error) {
 	ctx := C.xmlSecDSigCtxCreate(nil)
 	if ctx == nil {
@@ -120,13 +134,25 @@ func xmlSecDSigCtxCreate() (*DSigCtx, error) {
 	return &DSigCtx{ptr: ctx}, nil
 }
 
-func xmlSecDSigCtxDestroy(ctx *DSigCtx) error {
-	ptr := ctx.ptr
-	if ptr == nil {
-		return ErrInvalidDSigCtx
+func validDSigCtxPtr(ctx *DSigCtx) (*C.xmlSecDSigCtx, error) {
+	if ctx == nil {
+		return nil, ErrInvalidDSigCtx
 	}
 
-	C.xmlSecDSigCtxDestroy(ptr)
+	if ptr := ctx.ptr; ptr != nil {
+		return ptr, nil
+	}
+
+	return nil, ErrInvalidDSigCtx
+}
+
+func xmlSecDSigCtxDestroy(ctx *DSigCtx) error {
+	ctxptr, err := validDSigCtxPtr(ctx)
+	if err != nil {
+		return err
+	}
+
+	C.xmlSecDSigCtxDestroy(ctxptr)
 	return nil
 }
 
@@ -146,7 +172,9 @@ func xmlSecCryptoAppKeyLoadMemory(buf []byte, format KeyDataFormat) (*Key, error
 }
 
 func xmlSecCryptoAppKeyLoad(file string, format KeyDataFormat) (*Key, error) {
-	key := C.xmlSecCryptoAppKeyLoad(C.CString(file), (C.xmlSecKeyDataFormat)(format), nil, nil, nil)
+	cfile := C.CString(file)
+	defer C.free(unsafe.Pointer(cfile))
+	key := C.xmlSecCryptoAppKeyLoad(cfile, (C.xmlSecKeyDataFormat)(format), nil, nil, nil)
 	if key == nil {
 		return nil, errors.New("failed to load key")
 	}
@@ -158,13 +186,13 @@ func xmlSecCryptoAppKeyLoad(file string, format KeyDataFormat) (*Key, error) {
 	return &Key{ptr: key}, nil
 }
 
-func (d *DSigCtx) SetKey(key *Key) error {
-	ptr := d.ptr
-	if ptr == nil {
-		return ErrInvalidDSigCtx
+func (ctx *DSigCtx) SetKey(key *Key) error {
+	ctxptr, err := validDSigCtxPtr(ctx)
+	if err != nil {
+		return err
 	}
 
-	ptr.signKey = key.ptr
+	ctxptr.signKey = key.ptr
 	return nil
 }
 
@@ -176,27 +204,33 @@ func xmlSecDSigCtxSignRaw(ctxptr *C.xmlSecDSigCtx, nodeptr *C.xmlNode) error {
 }
 
 func xmlSecDSigCtxSignNode(ctx *DSigCtx, n libxml2.Node) error {
-	nodeptr := (*C.xmlNode)(n.Pointer())
-	if nodeptr == nil {
-		return libxml2.ErrInvalidNode
+	ctxptr, err := validDSigCtxPtr(ctx)
+	if err != nil {
+		return err
 	}
 
-	ctxptr := ctx.ptr
-	if ctxptr == nil {
-		return ErrInvalidDSigCtx
+	nodeptr, err := validNodePtr(n)
+	if err != nil {
+		return err
 	}
+
 	return xmlSecDSigCtxSignRaw(ctxptr, nodeptr)
 }
 
 func xmlSecDSigCtxSignDocument(ctx *DSigCtx, doc *libxml2.Document) error {
+	ctxptr, err := validDSigCtxPtr(ctx)
+	if err != nil {
+		return err
+	}
+
 	root, err := doc.DocumentElement()
 	if err != nil {
 		return err
 	}
 
-	rootptr := (*C.xmlNode)(unsafe.Pointer(root.Pointer()))
-	if rootptr == nil {
-		return libxml2.ErrNodeNotFound
+	rootptr, err := validNodePtr(root)
+	if err != nil {
+		return err
 	}
 
 	nodeptr := C.xmlSecFindNode(
@@ -207,11 +241,6 @@ func xmlSecDSigCtxSignDocument(ctx *DSigCtx, doc *libxml2.Document) error {
 
 	if nodeptr == nil {
 		return errors.New("failed to find start node")
-	}
-
-	ctxptr := ctx.ptr
-	if ctxptr == nil {
-		return ErrInvalidDSigCtx
 	}
 
 	return xmlSecDSigCtxSignRaw(ctxptr, nodeptr)
@@ -229,27 +258,33 @@ func xmlSecDSigCtxVerifyRaw(ctxptr *C.xmlSecDSigCtx, nodeptr *C.xmlNode) error {
 }
 
 func xmlSecDSigCtxVerifyNode(ctx *DSigCtx, n libxml2.Node) error {
-	nodeptr := (*C.xmlNode)(n.Pointer())
-	if nodeptr == nil {
-		return libxml2.ErrInvalidNode
+	ctxptr, err := validDSigCtxPtr(ctx)
+	if err != nil {
+		return err
 	}
 
-	ctxptr := ctx.ptr
-	if ctxptr == nil {
-		return ErrInvalidDSigCtx
+	nodeptr, err := validNodePtr(n)
+	if err != nil {
+		return err
 	}
+
 	return xmlSecDSigCtxVerifyRaw(ctxptr, nodeptr)
 }
 
 func xmlSecDSigCtxVerifyDocument(ctx *DSigCtx, doc *libxml2.Document) error {
+	ctxptr, err := validDSigCtxPtr(ctx)
+	if err != nil {
+		return err
+	}
+
 	root, err := doc.DocumentElement()
 	if err != nil {
 		return err
 	}
 
-	rootptr := (*C.xmlNode)(unsafe.Pointer(root.Pointer()))
-	if rootptr == nil {
-		return libxml2.ErrNodeNotFound
+	rootptr, err := validNodePtr(root)
+	if err != nil {
+		return err
 	}
 
 	nodeptr := C.xmlSecFindNode(
@@ -261,10 +296,6 @@ func xmlSecDSigCtxVerifyDocument(ctx *DSigCtx, doc *libxml2.Document) error {
 		return errors.New("failed to find start node")
 	}
 
-	ctxptr := ctx.ptr
-	if ctxptr == nil {
-		return ErrInvalidDSigCtx
-	}
 	return xmlSecDSigCtxVerifyRaw(ctxptr, nodeptr)
 }
 
@@ -292,9 +323,9 @@ func xmlSecTmplSignatureCreate(doc *libxml2.Document, c14nMethod TransformID, si
 }
 
 func xmlSecTmplSignatureAddReference(signode libxml2.Node, digestMethod TransformID, id, uri, nodeType string) (libxml2.Node, error) {
-	nptr := (*C.xmlNode)(signode.Pointer())
-	if nptr == nil {
-		return nil, libxml2.ErrInvalidNode
+	nptr, err := validNodePtr(signode)
+	if err != nil {
+		return nil, err
 	}
 
 	var idxml, urixml, typexml *C.xmlChar
@@ -323,9 +354,9 @@ func xmlSecTmplSignatureAddReference(signode libxml2.Node, digestMethod Transfor
 }
 
 func xmlSecTmplReferenceAddTransform(n libxml2.Node, transformId TransformID) (libxml2.Node, error) {
-	nptr := (*C.xmlNode)(n.Pointer())
-	if nptr == nil {
-		return nil, libxml2.ErrInvalidNode
+	nptr, err := validNodePtr(n)
+	if err != nil {
+		return nil, err
 	}
 
 	ptr := C.xmlSecTmplReferenceAddTransform(
@@ -338,3 +369,38 @@ func xmlSecTmplReferenceAddTransform(n libxml2.Node, transformId TransformID) (l
 
 	return libxml2.WrapToNodeUnsafe(unsafe.Pointer(ptr))
 }
+
+func xmlSecTmplSignatureEnsureKeyInfo(n libxml2.Node, id string) (libxml2.Node, error) {
+	nptr, err := validNodePtr(n)
+	if err != nil {
+		return nil, err
+	}
+	var idc *C.xmlChar
+	if id != "" {
+		idc = stringToXmlChar(id)
+		defer C.free(unsafe.Pointer(idc))
+	}
+
+	ret := C.xmlSecTmplSignatureEnsureKeyInfo(nptr, idc)
+	if ret == nil {
+		return nil, errors.New("failed to add KeyInfo node")
+	}
+
+	return libxml2.WrapToNodeUnsafe(unsafe.Pointer(ret))
+}
+
+func xmlSecTmplKeyInfoAddX509Data(n libxml2.Node) (libxml2.Node, error) {
+	nptr, err := validNodePtr(n)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := C.xmlSecTmplKeyInfoAddX509Data(nptr)
+	if ret == nil {
+		return nil, errors.New("failed to add X509Data node")
+	}
+
+	return libxml2.WrapToNodeUnsafe(unsafe.Pointer(ret))
+}
+
+//func xmlSecCryptoAppKeyCertLoad(ctx *DSigCtx, certFile string, format KeyDataFormat) error {

@@ -73,8 +73,30 @@ func (s *Signature) AddTransform(transformID TransformID) error {
 		return errors.New("missing reference node: did you call AddReference() first?")
 	}
 
-	_, err := xmlSecTmplReferenceAddTransform(s.refnode, transformID)
-	return err
+	if _, err := xmlSecTmplReferenceAddTransform(s.refnode, transformID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Signature) EnsureKeyInfo(ids ...string) error {
+	var id string
+	if len(ids) > 0 {
+		id = ids[0]
+	}
+	keyinfo, err := xmlSecTmplSignatureEnsureKeyInfo(s.signnode, id)
+	if err != nil {
+		return err
+	}
+	s.keyinfo = keyinfo
+	return nil
+}
+
+func (s *Signature) AddX509Data() error {
+	if _, err := xmlSecTmplKeyInfoAddX509Data(s.keyinfo); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *Signature) Sign(key interface{}) error {

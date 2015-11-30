@@ -194,6 +194,14 @@ func TestSignature(t *testing.T) {
 		return
 	}
 
+	if !assert.NoError(t, sig.EnsureKeyInfo(), "EnsureKeyInfo succeeds") {
+		return
+	}
+
+	if !assert.NoError(t, sig.AddX509Data(), "AddX509Data succeeds") {
+		return
+	}
+
 	if !assert.NoError(t, sig.Sign(privkey), "Sign succeeds") {
 		return
 	}

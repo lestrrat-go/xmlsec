@@ -371,7 +371,7 @@ func xmlSecTmplSignatureAddReference(signode libxml2.Node, digestMethod Transfor
 	return libxml2.WrapToNodeUnsafe(unsafe.Pointer(ptr))
 }
 
-func xmlSecTmplReferenceAddTransform(n libxml2.Node, transformId TransformID) (libxml2.Node, error) {
+func xmlSecTmplReferenceAddTransform(n libxml2.Node, transformID TransformID) (libxml2.Node, error) {
 	nptr, err := validNodePtr(n)
 	if err != nil {
 		return nil, err
@@ -379,7 +379,7 @@ func xmlSecTmplReferenceAddTransform(n libxml2.Node, transformId TransformID) (l
 
 	ptr := C.xmlSecTmplReferenceAddTransform(
 		nptr,
-		transformId.ptr,
+		transformID.ptr,
 	)
 	if ptr == nil {
 		return nil, errors.New("failed to add transform")

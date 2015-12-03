@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/lestrrat/go-libxml2"
+	"github.com/lestrrat/go-libxml2/parser"
 	"github.com/lestrrat/go-xmlsec"
 )
 
@@ -17,7 +17,7 @@ func ExampleSignature_Sign() {
 	xmlsec.Init()
 	defer xmlsec.Shutdown()
 
-	p := libxml2.NewParser(libxml2.XMLParseDTDLoad | libxml2.XMLParseDTDAttr | libxml2.XMLParseNoEnt)
+	p := parser.New(parser.XMLParseDTDLoad | parser.XMLParseDTDAttr | parser.XMLParseNoEnt)
 	doc, err := p.ParseString(`<?xml version="1.0" encoding="UTF-8"?>
 <Message><Data>Hello, World!</Data></Message>`)
 
@@ -100,7 +100,7 @@ func ExampleDSigCtx_Sign() {
 	}
 	ctx.SetKey(key)
 
-	p := libxml2.NewParser(libxml2.XMLParseDTDLoad | libxml2.XMLParseDTDAttr | libxml2.XMLParseNoEnt)
+	p := parser.New(parser.XMLParseDTDLoad | parser.XMLParseDTDAttr | parser.XMLParseNoEnt)
 	doc, err := p.ParseString(`<?xml version="1.0" encoding="UTF-8"?>
 <!-- XML Security Library example: Simple signature template file for sign1 example.  -->
 <Envelope xmlns="urn:envelope">

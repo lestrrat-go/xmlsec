@@ -18,7 +18,7 @@ import "C"
 import (
 	"errors"
 
-	"github.com/lestrrat/go-libxml2"
+	"github.com/lestrrat/go-libxml2/types"
 )
 
 var (
@@ -52,8 +52,8 @@ var (
 )
 
 type Signature struct {
-	keyinfo    libxml2.Node
-	refnode    libxml2.Node
+	keyinfo    types.Node
+	refnode    types.Node
 	signmethod TransformID
-	signnode   libxml2.Node
+	signnode   types.Node
 }

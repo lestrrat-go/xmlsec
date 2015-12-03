@@ -10,7 +10,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/lestrrat/go-libxml2"
+	"github.com/lestrrat/go-libxml2/dom"
+	"github.com/lestrrat/go-libxml2/parser"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -87,7 +88,7 @@ func TestXmlSecDSigCtx(t *testing.T) {
 	}
 	defer os.Remove(pubfile)
 
-	p := libxml2.NewParser(libxml2.XMLParseDTDLoad | libxml2.XMLParseDTDAttr | libxml2.XMLParseNoEnt)
+	p := parser.New(parser.XMLParseDTDLoad | parser.XMLParseDTDAttr | parser.XMLParseNoEnt)
 	doc, err := p.ParseString(`<?xml version="1.0" encoding="UTF-8"?>
 <!-- XML Security Library example: Simple signature template file for sign1 example.  -->
 <Envelope xmlns="urn:envelope">
@@ -161,7 +162,7 @@ func TestSignature(t *testing.T) {
 	Init()
 	defer Shutdown()
 
-	doc := libxml2.CreateDocument()
+	doc := dom.CreateDocument()
 	defer doc.Free()
 
 	message, err := doc.CreateElement("Message")

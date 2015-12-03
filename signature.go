@@ -3,7 +3,7 @@ package xmlsec
 import (
 	"errors"
 
-	"github.com/lestrrat/go-libxml2"
+	"github.com/lestrrat/go-libxml2/types"
 )
 
 // NewDSigCtx creates a new XML Signature Context
@@ -18,27 +18,27 @@ func (d *DSigCtx) Free() error {
 
 // Sign signs the given document. It automatically searches
 // for the "Signature" node with the namespace "http://www.w3.org/2000/09/xmldsig#".
-func (d *DSigCtx) Sign(doc *libxml2.Document) error {
+func (d *DSigCtx) Sign(doc types.Document) error {
 	return xmlSecDSigCtxSignDocument(d, doc)
 }
 
 // SignNode signs the given node.
-func (d *DSigCtx) SignNode(n libxml2.Node) error {
+func (d *DSigCtx) SignNode(n types.Node) error {
 	return xmlSecDSigCtxSignNode(d, n)
 }
 
 // Verify verifies the signature in the given document. It automatically searches
 // for the "Signature" node with the namespace "http://www.w3.org/2000/09/xmldsig#".
-func (d *DSigCtx) Verify(doc *libxml2.Document) error {
+func (d *DSigCtx) Verify(doc types.Document) error {
 	return xmlSecDSigCtxVerifyDocument(d, doc)
 }
 
 // VerifyNode verifies the signature in the given node
-func (d *DSigCtx) VerifyNode(n libxml2.Node) error {
+func (d *DSigCtx) VerifyNode(n types.Node) error {
 	return xmlSecDSigCtxVerifyNode(d, n)
 }
 
-func NewSignature(n libxml2.Node, c14n, sig TransformID, id string) (*Signature, error) {
+func NewSignature(n types.Node, c14n, sig TransformID, id string) (*Signature, error) {
 	doc, err := n.OwnerDocument()
 	if err != nil {
 		return nil, err

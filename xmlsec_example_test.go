@@ -11,6 +11,8 @@ import (
 
 	"github.com/lestrrat/go-libxml2/parser"
 	"github.com/lestrrat/go-xmlsec"
+	"github.com/lestrrat/go-xmlsec/crypto"
+	"github.com/lestrrat/go-xmlsec/dsig"
 )
 
 func ExampleSignature_Sign() {
@@ -29,14 +31,14 @@ func ExampleSignature_Sign() {
 
 	// n is the node where you want your signature to be
 	// generated under
-	sig, err := xmlsec.NewSignature(n, xmlsec.ExclC14N, xmlsec.RsaSha1, "")
+	sig, err := dsig.NewSignature(n, dsig.ExclC14N, dsig.RsaSha1, "")
 	if err != nil {
 		log.Printf("failed to create signature: %s", err)
 		return
 	}
 
-	sig.AddReference(xmlsec.Sha1, "", "", "")
-	sig.AddTransform(xmlsec.Enveloped)
+	sig.AddReference(dsig.Sha1, "", "", "")
+	sig.AddTransform(dsig.Enveloped)
 
 	privkey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -44,7 +46,7 @@ func ExampleSignature_Sign() {
 		return
 	}
 
-	key, err := xmlsec.LoadKeyFromRSAPrivateKey(privkey)
+	key, err := crypto.LoadKeyFromRSAPrivateKey(privkey)
 	if err := sig.Sign(key); err != nil {
 		log.Printf("failed to sign: %s", err)
 		return
@@ -57,7 +59,7 @@ func ExampleDSigCtx_Sign() {
 	xmlsec.Init()
 	defer xmlsec.Shutdown()
 
-	ctx, err := xmlsec.NewDSigCtx()
+	ctx, err := dsig.NewCtx()
 	if err != nil {
 		log.Printf("Failed to create signature context: %s", err)
 		return
@@ -93,7 +95,7 @@ func ExampleDSigCtx_Sign() {
 		return
 	}
 
-	key, err := xmlsec.LoadKeyFromFile(pemfile.Name(), xmlsec.KeyDataFormatPem)
+	key, err := crypto.LoadKeyFromFile(pemfile.Name(), crypto.KeyDataFormatPem)
 	if err != nil {
 		log.Printf("Faild to load key: %s", err)
 		return

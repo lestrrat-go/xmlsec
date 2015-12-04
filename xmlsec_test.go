@@ -1,4 +1,4 @@
-package xmlsec
+package xmlsec_test
 
 import (
 	"crypto/rand"
@@ -12,13 +12,16 @@ import (
 
 	"github.com/lestrrat/go-libxml2/dom"
 	"github.com/lestrrat/go-libxml2/parser"
+	"github.com/lestrrat/go-xmlsec"
+	"github.com/lestrrat/go-xmlsec/crypto"
+	"github.com/lestrrat/go-xmlsec/dsig"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestXmlSec(t *testing.T) {
 	f := func() {
-		Init()
-		defer Shutdown()
+		xmlsec.Init()
+		defer xmlsec.Shutdown()
 	}
 
 	if !assert.NotPanics(t, f, "Init + Shutdown should succeed") {
@@ -68,8 +71,8 @@ func writePublicKey(pubkey *rsa.PublicKey) (string, error) {
 }
 
 func TestXmlSecDSigCtx(t *testing.T) {
-	Init()
-	defer Shutdown()
+	xmlsec.Init()
+	defer xmlsec.Shutdown()
 
 	privkey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if !assert.NoError(t, err, "Generating private key should succeed") {
@@ -120,13 +123,13 @@ func TestXmlSecDSigCtx(t *testing.T) {
 	defer doc.Free()
 
 	{
-		ctx, err := NewDSigCtx()
-		if !assert.NoError(t, err, "NewDSigCtx should succeed") {
+		ctx, err := dsig.NewCtx()
+		if !assert.NoError(t, err, "dsig.NewCtx should succeed") {
 			return
 		}
 		defer ctx.Free()
 
-		key, err := LoadKeyFromFile(privfile, KeyDataFormatPem)
+		key, err := crypto.LoadKeyFromFile(privfile, crypto.KeyDataFormatPem)
 		if !assert.NoError(t, err, "Loading private key '%s' should succeed", privfile) {
 			return
 		}
@@ -140,13 +143,13 @@ func TestXmlSecDSigCtx(t *testing.T) {
 	t.Logf("%s", doc.Dump(true))
 
 	{
-		ctx, err := NewDSigCtx()
-		if !assert.NoError(t, err, "NewDSigCtx should succeed") {
+		ctx, err := dsig.NewCtx()
+		if !assert.NoError(t, err, "dsig.NewCtx should succeed") {
 			return
 		}
 		defer ctx.Free()
 
-		key, err := LoadKeyFromFile(pubfile, KeyDataFormatPem)
+		key, err := crypto.LoadKeyFromFile(pubfile, crypto.KeyDataFormatPem)
 		if !assert.NoError(t, err, "Loading public key '%s' should succeed", pubfile) {
 			return
 		}
@@ -159,8 +162,8 @@ func TestXmlSecDSigCtx(t *testing.T) {
 }
 
 func TestSignature(t *testing.T) {
-	Init()
-	defer Shutdown()
+	xmlsec.Init()
+	defer xmlsec.Shutdown()
 
 	doc := dom.CreateDocument()
 	defer doc.Free()
@@ -178,16 +181,16 @@ func TestSignature(t *testing.T) {
 	message.AddChild(data)
 	data.AppendText("Hello, World!")
 
-	sig, err := NewSignature(message, ExclC14N, RsaSha1, "")
+	sig, err := dsig.NewSignature(message, dsig.ExclC14N, dsig.RsaSha1, "")
 	if !assert.NoError(t, err, "NewSignature succeeds") {
 		return
 	}
 
-	if !assert.NoError(t, sig.AddReference(Sha1, "", "", ""), "AddReference succeeds") {
+	if !assert.NoError(t, sig.AddReference(dsig.Sha1, "", "", ""), "AddReference succeeds") {
 		return
 	}
 
-	if !assert.NoError(t, sig.AddTransform(Enveloped), "AddTransform succeeds") {
+	if !assert.NoError(t, sig.AddTransform(dsig.Enveloped), "AddTransform succeeds") {
 		return
 	}
 
@@ -201,12 +204,12 @@ func TestSignature(t *testing.T) {
 
 	keyfile := filepath.Join("test", "key.pem")
 	certfile := filepath.Join("test", "cert.pem")
-	key, err := LoadKeyFromFile(keyfile, KeyDataFormatPem)
+	key, err := crypto.LoadKeyFromFile(keyfile, crypto.KeyDataFormatPem)
 	if !assert.NoError(t, err, "Load key from file succeeds") {
 		return
 	}
 
-	key.LoadCertFromFile(certfile, KeyDataFormatPem)
+	key.LoadCertFromFile(certfile, crypto.KeyDataFormatPem)
 
 	if !assert.NoError(t, sig.Sign(key), "Sign succeeds") {
 		return

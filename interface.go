@@ -21,6 +21,8 @@ import (
 	"github.com/lestrrat/go-libxml2/types"
 )
 
+var Prefix = "ds"
+
 var (
 	ErrInvalidDSigCtx = errors.New("invalid dsig context")
 	ErrInvalidKey     = errors.New("invalid key")

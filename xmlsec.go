@@ -317,22 +317,30 @@ func xmlSecDSigCtxVerifyDocument(ctx *DSigCtx, doc types.Document) error {
 	return xmlSecDSigCtxVerifyRaw(ctxptr, nodeptr)
 }
 
-func xmlSecTmplSignatureCreate(doc types.Document, c14nMethod TransformID, signMethod TransformID, id string) (types.Node, error) {
+func xmlSecTmplSignatureCreateNsPref(doc types.Document, c14nMethod TransformID, signMethod TransformID, id string, prefix string) (types.Node, error) {
 	docptr := (*C.xmlDoc)(unsafe.Pointer(doc.Pointer()))
 	if docptr == nil {
 		return nil, clib.ErrInvalidDocument
 	}
 
-	var idxml *C.xmlChar
+	var xcid *C.xmlChar
 	if id != "" {
-		idxml = stringToXMLChar(id)
-		defer C.free(unsafe.Pointer(idxml))
+		xcid = stringToXMLChar(id)
+		defer C.free(unsafe.Pointer(xcid))
 	}
-	ptr := C.xmlSecTmplSignatureCreate(
+
+	var xcprefix *C.xmlChar
+	if prefix != "" {
+		xcprefix = stringToXMLChar(prefix)
+		defer C.free(unsafe.Pointer(xcprefix))
+	}
+
+	ptr := C.xmlSecTmplSignatureCreateNsPref(
 		docptr,
 		c14nMethod.ptr,
 		signMethod.ptr,
-		idxml,
+		xcid,
+		xcprefix,
 	)
 	if ptr == nil {
 		return nil, errors.New("failed to create signature template")

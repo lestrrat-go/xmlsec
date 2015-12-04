@@ -44,7 +44,7 @@ func NewSignature(n types.Node, c14n, sig TransformID, id string) (*Signature, e
 		return nil, err
 	}
 
-	signnode, err := xmlSecTmplSignatureCreate(doc, c14n, sig, id)
+	signnode, err := xmlSecTmplSignatureCreateNsPref(doc, c14n, sig, id, Prefix)
 	if err != nil {
 		return nil, err
 	}

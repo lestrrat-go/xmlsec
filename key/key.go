@@ -9,10 +9,12 @@ import (
 	"github.com/lestrrat/go-xmlsec"
 )
 
+// NewDSA creates a new DSA key representation for the public key
 func NewDSA(pubkey *dsa.PublicKey) *DSA {
 	return &DSA{key: pubkey}
 }
 
+// Serialize creates the XML representation for this DSA key
 func (key *DSA) Serialize() (string, error) {
 	doc := dom.CreateDocument()
 	defer doc.AutoFree()
@@ -29,6 +31,7 @@ func (key *DSA) Serialize() (string, error) {
 	return doc.Dump(true), nil
 }
 
+// MakeXMLNode creates a libxml2 node tree to represent this DSA key
 func (key *DSA) MakeXMLNode(doc types.Document) (types.Node, error) {
 	var root types.Node
 	var err error

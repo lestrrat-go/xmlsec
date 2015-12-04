@@ -51,13 +51,19 @@ func (d *Ctx) VerifyNode(n types.Node) error {
 	return clib.XMLSecDSigCtxVerifyNode(d, n)
 }
 
-func NewSignature(n types.Node, c14n, sig clib.TransformID, id string) (*Signature, error) {
+func NewSignature(n types.Node, c14n, sig TransformID, id string) (*Signature, error) {
 	doc, err := n.OwnerDocument()
 	if err != nil {
 		return nil, err
 	}
 
-	signnode, err := clib.XMLSecTmplSignatureCreateNsPref(doc, c14n, sig, id, clib.Prefix)
+	signnode, err := clib.XMLSecTmplSignatureCreateNsPref(
+		doc,
+		clib.TransformID(c14n),
+		clib.TransformID(sig),
+		id,
+		clib.Prefix,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +76,14 @@ func NewSignature(n types.Node, c14n, sig clib.TransformID, id string) (*Signatu
 	}, nil
 }
 
-func (s *Signature) AddReference(digestMethod clib.TransformID, id, uri, nodeType string) error {
-	rn, err := clib.XMLSecTmplSignatureAddReference(s.signnode, digestMethod, id, uri, nodeType)
+func (s *Signature) AddReference(digestMethod TransformID, id, uri, nodeType string) error {
+	rn, err := clib.XMLSecTmplSignatureAddReference(
+		s.signnode,
+		clib.TransformID(digestMethod),
+		id,
+		uri,
+		nodeType,
+	)
 	if err != nil {
 		return err
 	}
@@ -80,12 +92,12 @@ func (s *Signature) AddReference(digestMethod clib.TransformID, id, uri, nodeTyp
 	return nil
 }
 
-func (s *Signature) AddTransform(transformID clib.TransformID) error {
+func (s *Signature) AddTransform(transformID TransformID) error {
 	if s.refnode == nil {
 		return errors.New("missing reference node: did you call AddReference() first?")
 	}
 
-	if _, err := clib.XMLSecTmplReferenceAddTransform(s.refnode, transformID); err != nil {
+	if _, err := clib.XMLSecTmplReferenceAddTransform(s.refnode, clib.TransformID(transformID)); err != nil {
 		return err
 	}
 	return nil

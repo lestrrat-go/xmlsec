@@ -5,11 +5,12 @@ import (
 	"github.com/lestrrat/go-xmlsec/clib"
 )
 
+type TransformID clib.TransformID
 var (
-	ExclC14N  = clib.ExclC14N
-	Enveloped = clib.Enveloped
-	Sha1      = clib.Sha1
-	RsaSha1   = clib.RsaSha1
+	ExclC14N  = TransformID(clib.ExclC14N)
+	Enveloped = TransformID(clib.Enveloped)
+	Sha1      = TransformID(clib.Sha1)
+	RsaSha1   = TransformID(clib.RsaSha1)
 )
 
 type Ctx struct {
@@ -19,6 +20,6 @@ type Ctx struct {
 type Signature struct {
 	keyinfo    types.Node
 	refnode    types.Node
-	signmethod clib.TransformID
+	signmethod TransformID
 	signnode   types.Node
 }

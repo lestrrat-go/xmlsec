@@ -1,4 +1,5 @@
 /*
+
 Package clib holds all of the dirty C interaction for go-xmlsec.
 
 Although this package is visible to the outside world, the API in this
@@ -128,6 +129,10 @@ var (
 	RsaSha1   = TransformID{ptr: C.MY_RsaSha1Id()}
 )
 
+// XMLSecInit initializes xmlsec by calling the various initilizers.
+// Currently it sets up libxslt to disable interaction with the
+// filesystem and the network, and calls xmlSecInit, xmlSecCryptoAppInit,
+// and xmlSecCryptoInit
 func XMLSecInit() error {
 	if C.go_xmlsec_init() < C.int(0) {
 		return errors.New("failed to initialize")
@@ -135,6 +140,7 @@ func XMLSecInit() error {
 	return nil
 }
 
+// XMLSecShutdown cleans up xmlsec by calling the various shutdown functions.
 func XMLSecShutdown() error {
 	C.go_xmlsec_shutdown()
 	return nil
@@ -183,6 +189,8 @@ func validKeyPtr(key PtrSource) (*C.xmlSecKey, error) {
 	return nil, ErrInvalidKey
 }
 
+// XMLSecDSigCtxCreate calls xmlSecDSigCtxCreate with a nil parameter
+// and returns a pointer to the new struct
 func XMLSecDSigCtxCreate() (uintptr, error) {
 	ctx := C.xmlSecDSigCtxCreate(nil)
 	if ctx == nil {
@@ -191,6 +199,8 @@ func XMLSecDSigCtxCreate() (uintptr, error) {
 	return uintptr(unsafe.Pointer(ctx)), nil
 }
 
+// XMLSecDSigCtxDestroy calls xmlSecDSigCtxDestroy on the underlying
+// C pointer, if available.
 func XMLSecDSigCtxDestroy(ctx PtrSource) error {
 	ctxptr, err := validDSigCtxPtr(ctx)
 	if err != nil {
@@ -201,6 +211,10 @@ func XMLSecDSigCtxDestroy(ctx PtrSource) error {
 	return nil
 }
 
+// XMLSecCryptoAppKeyLoadMemory calls xmlSecCryptoAppKeyLoadMemory to
+// load a key from an in memory buffer.
+// This function acceses the byte buffer directly, so make sure not
+// to touch the buffer from some other goroutine
 func XMLSecCryptoAppKeyLoadMemory(buf []byte, format KeyDataFormat) (uintptr, error) {
 	key := C.xmlSecCryptoAppKeyLoadMemory(
 		(*C.xmlSecByte)(unsafe.Pointer(&buf[0])),
@@ -216,6 +230,7 @@ func XMLSecCryptoAppKeyLoadMemory(buf []byte, format KeyDataFormat) (uintptr, er
 	return uintptr(unsafe.Pointer(key)), nil
 }
 
+// XMLSecCryptoAppKeyLoad calls xmlSecCryptoAppKeyLoad to load a key from  file
 func XMLSecCryptoAppKeyLoad(file string, format KeyDataFormat) (uintptr, error) {
 	cfile := C.CString(file)
 	defer C.free(unsafe.Pointer(cfile))
@@ -231,6 +246,8 @@ func XMLSecCryptoAppKeyLoad(file string, format KeyDataFormat) (uintptr, error) 
 	return uintptr(unsafe.Pointer(key)), nil
 }
 
+// XMLSecDSigCtxtSetKey sets the C pointer for key to the signKey
+// slot of the C pointer for ctx.
 func XMLSecDSigCtxSetKey(ctx PtrSource, key PtrSource) error {
 	ctxptr, err := validDSigCtxPtr(ctx)
 	if err != nil {
@@ -246,7 +263,7 @@ func XMLSecDSigCtxSetKey(ctx PtrSource, key PtrSource) error {
 	return nil
 }
 
-func XMLSecDSigCtxSignRaw(ctxptr *C.xmlSecDSigCtx, nodeptr *C.xmlNode) error {
+func xmlSecDSigCtxSignRaw(ctxptr *C.xmlSecDSigCtx, nodeptr *C.xmlNode) error {
 	if C.xmlSecDSigCtxSign(ctxptr, nodeptr) < C.int(0) {
 		return errors.New("failed to sign node")
 	}
@@ -264,7 +281,7 @@ func XMLSecDSigCtxSignNode(ctx PtrSource, n types.Node) error {
 		return err
 	}
 
-	return XMLSecDSigCtxSignRaw(ctxptr, nodeptr)
+	return xmlSecDSigCtxSignRaw(ctxptr, nodeptr)
 }
 
 func XMLSecDSigCtxSignDocument(ctx PtrSource, doc types.Document) error {
@@ -293,7 +310,7 @@ func XMLSecDSigCtxSignDocument(ctx PtrSource, doc types.Document) error {
 		return errors.New("failed to find start node")
 	}
 
-	return XMLSecDSigCtxSignRaw(ctxptr, nodeptr)
+	return xmlSecDSigCtxSignRaw(ctxptr, nodeptr)
 }
 
 func XMLSecDSigCtxVerifyRaw(ctxptr *C.xmlSecDSigCtx, nodeptr *C.xmlNode) error {

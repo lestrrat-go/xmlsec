@@ -33,11 +33,11 @@ const (
 )
 
 type DSigCtx struct {
-	ptr *C.xmlSecDSigCtx
+	ptr uintptr // *C.xmlSecDSigCtx
 }
 
 type Key struct {
-	ptr *C.xmlSecKey
+	ptr uintptr // *C.xmlSecKey
 }
 
 type TransformID struct {

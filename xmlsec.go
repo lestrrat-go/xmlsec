@@ -120,33 +120,10 @@ func validNodePtr(n types.Node) (*C.xmlNode, error) {
 		return nil, clib.ErrInvalidNode
 	}
 
-	nptr := (*C.xmlNode)(unsafe.Pointer(n.Pointer()))
-	if nptr == nil {
-		return nil, clib.ErrInvalidNode
+	if ptr := n.Pointer(); ptr != 0 {
+		return (*C.xmlNode)(unsafe.Pointer(ptr)), nil
 	}
-
-	return nptr, nil
-}
-
-func validKeyPtr(key *Key) (*C.xmlSecKey, error) {
-	if key == nil {
-		return nil, ErrInvalidKey
-	}
-
-	keyptr := key.ptr
-	if keyptr == nil {
-		return nil, ErrInvalidKey
-	}
-
-	return keyptr, nil
-}
-
-func xmlSecDSigCtxCreate() (*DSigCtx, error) {
-	ctx := C.xmlSecDSigCtxCreate(nil)
-	if ctx == nil {
-		return nil, errors.New("failed to create DSigCtx")
-	}
-	return &DSigCtx{ptr: ctx}, nil
+	return nil, clib.ErrInvalidNode
 }
 
 func validDSigCtxPtr(ctx *DSigCtx) (*C.xmlSecDSigCtx, error) {
@@ -154,11 +131,31 @@ func validDSigCtxPtr(ctx *DSigCtx) (*C.xmlSecDSigCtx, error) {
 		return nil, ErrInvalidDSigCtx
 	}
 
-	if ptr := ctx.ptr; ptr != nil {
-		return ptr, nil
+	if ptr := ctx.ptr; ptr != 0 {
+		return (*C.xmlSecDSigCtx)(unsafe.Pointer(ptr)), nil
 	}
 
 	return nil, ErrInvalidDSigCtx
+}
+
+func validKeyPtr(key *Key) (*C.xmlSecKey, error) {
+	if key == nil {
+		return nil, ErrInvalidKey
+	}
+
+	if ptr := key.ptr; ptr != 0 {
+		return (*C.xmlSecKey)(unsafe.Pointer(ptr)), nil
+	}
+
+	return nil, ErrInvalidKey
+}
+
+func xmlSecDSigCtxCreate() (*DSigCtx, error) {
+	ctx := C.xmlSecDSigCtxCreate(nil)
+	if ctx == nil {
+		return nil, errors.New("failed to create DSigCtx")
+	}
+	return &DSigCtx{ptr: uintptr(unsafe.Pointer(ctx))}, nil
 }
 
 func xmlSecDSigCtxDestroy(ctx *DSigCtx) error {
@@ -183,7 +180,7 @@ func xmlSecCryptoAppKeyLoadMemory(buf []byte, format KeyDataFormat) (*Key, error
 	if key == nil {
 		return nil, errors.New("failed to load key")
 	}
-	return &Key{ptr: key}, nil
+	return &Key{ptr: uintptr(unsafe.Pointer(key))}, nil
 }
 
 func xmlSecCryptoAppKeyLoad(file string, format KeyDataFormat) (*Key, error) {
@@ -198,7 +195,7 @@ func xmlSecCryptoAppKeyLoad(file string, format KeyDataFormat) (*Key, error) {
 		return nil, errors.New("failed to set key name")
 	}
 
-	return &Key{ptr: key}, nil
+	return &Key{ptr: uintptr(unsafe.Pointer(key))}, nil
 }
 
 func (ctx *DSigCtx) SetKey(key *Key) error {
@@ -207,7 +204,12 @@ func (ctx *DSigCtx) SetKey(key *Key) error {
 		return err
 	}
 
-	ctxptr.signKey = key.ptr
+	keyptr, err := validKeyPtr(key)
+	if err != nil {
+		return err
+	}
+
+	ctxptr.signKey = keyptr
 	return nil
 }
 

@@ -18,7 +18,6 @@ for it, your code WILL break in horrible horrible ways. You have been
 warned.
 
 */
-
 package clib
 
 /*

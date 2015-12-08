@@ -14,6 +14,10 @@ import (
 	"crypto/rsa"
 )
 
+type Key interface {
+	Serialize() (string, error)
+}
+
 // RSA represents a RSA key
 type RSA struct {
 	key *rsa.PublicKey

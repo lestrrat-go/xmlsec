@@ -32,6 +32,19 @@ func TestDSA(t *testing.T) {
 	}
 
 	t.Logf("%s", xmlstr)
+
+	key2, err := Parse([]byte(xmlstr))
+	if !assert.NoError(t, err, "Parse succeeds") {
+		return
+	}
+
+	switch key2.(type) {
+	case *DSA:
+	default:
+		if !assert.Fail(t, "expected *DSA type, but got something else") {
+			return
+		}
+	}
 }
 
 func TestRSA(t *testing.T) {
@@ -47,4 +60,17 @@ func TestRSA(t *testing.T) {
 	}
 
 	t.Logf("%s", xmlstr)
+
+	key2, err := Parse([]byte(xmlstr))
+	if !assert.NoError(t, err, "Parse succeeds") {
+		return
+	}
+
+	switch key2.(type) {
+	case *RSA:
+	default:
+		if !assert.Fail(t, "expected *RSA type, but got something else") {
+			return
+		}
+	}
 }

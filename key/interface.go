@@ -9,7 +9,15 @@ nodes.
 */
 package key
 
-import "crypto/dsa"
+import (
+	"crypto/dsa"
+	"crypto/rsa"
+)
+
+// RSA represents a RSA key
+type RSA struct {
+	key *rsa.PublicKey
+}
 
 // DSA represents a DSA key
 type DSA struct {

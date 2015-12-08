@@ -3,6 +3,7 @@ package key
 import (
 	"crypto/dsa"
 	"crypto/rand"
+	"crypto/rsa"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,6 +26,21 @@ func TestDSA(t *testing.T) {
 	}
 
 	key := NewDSA(&privkey.PublicKey)
+	xmlstr, err := key.Serialize()
+	if !assert.NoError(t, err, "Serialize succeeds") {
+		return
+	}
+
+	t.Logf("%s", xmlstr)
+}
+
+func TestRSA(t *testing.T) {
+	privkey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if !assert.NoError(t, err, "GenerateKey succeeds") {
+		return
+	}
+
+	key := NewRSA(&privkey.PublicKey)
 	xmlstr, err := key.Serialize()
 	if !assert.NoError(t, err, "Serialize succeeds") {
 		return

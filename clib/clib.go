@@ -153,7 +153,7 @@ func stringToXMLChar(s string) *C.xmlChar {
 	return C.to_xmlcharptr(C.CString(s))
 }
 
-func validNodePtr(n types.Node) (*C.xmlNode, error) {
+func validNodePtr(n PtrSource) (*C.xmlNode, error) {
 	if n == nil {
 		return nil, clib.ErrInvalidNode
 	}
@@ -188,10 +188,26 @@ func validKeyPtr(key PtrSource) (*C.xmlSecKey, error) {
 	return nil, ErrInvalidKey
 }
 
+func validKeysMngrPtr(mngr PtrSource) (*C.xmlSecKeysMngr, error) {
+	if mngr == nil {
+		return nil, ErrInvalidKeysMngr
+	}
+
+	if ptr := mngr.Pointer(); ptr != 0 {
+		return (*C.xmlSecKeysMngr)(unsafe.Pointer(ptr)), nil
+	}
+
+	return nil, ErrInvalidKeysMngr
+}
+
 // XMLSecDSigCtxCreate calls xmlSecDSigCtxCreate with a nil parameter
 // and returns a pointer to the new struct
-func XMLSecDSigCtxCreate() (uintptr, error) {
-	ctx := C.xmlSecDSigCtxCreate(nil)
+func XMLSecDSigCtxCreate(mngr PtrSource) (uintptr, error) {
+	// It's okay to have a nil keys manager, so ignore
+	// errors from validKeysMngrPtr
+	mngrptr, _ := validKeysMngrPtr(mngr)
+
+	ctx := C.xmlSecDSigCtxCreate(mngrptr)
 	if ctx == nil {
 		return 0, errors.New("failed to create DSigCtx")
 	}
@@ -312,6 +328,55 @@ func XMLSecDSigCtxSignDocument(ctx PtrSource, doc types.Document) error {
 	return xmlSecDSigCtxSignRaw(ctxptr, nodeptr)
 }
 
+// Calls xmlSecKeysMngrCreate, then initializes using
+// xmlSecCryptoAppDefaultKeysMngrInit
+func XMLSecKeysMngrCreate() (uintptr, error) {
+	mngr := C.xmlSecKeysMngrCreate()
+	if mngr == nil {
+		return 0, errors.New("failed to create key manager")
+	}
+	finalized := false
+	defer func() {
+		if finalized {
+			return
+		}
+		C.xmlSecKeysMngrDestroy(mngr)
+	}()
+
+	if C.xmlSecCryptoAppDefaultKeysMngrInit(mngr) < 0 {
+		return 0, errors.New("failed to initialize key manager")
+	}
+
+	finalized = true
+	return uintptr(unsafe.Pointer(mngr)), nil
+}
+
+func XMLSecKeysMngrDestroy(mngr PtrSource) error {
+	mngrptr, err := validKeysMngrPtr(mngr)
+	if err != nil {
+		return err
+	}
+	C.xmlSecKeysMngrDestroy(mngrptr)
+	return nil
+}
+
+func XMLSecKeysMngrAdoptKey(mngr, key PtrSource) error {
+	mngrptr, err := validKeysMngrPtr(mngr)
+	if err != nil {
+		return err
+	}
+
+	keyptr, err := validKeyPtr(key)
+	if err != nil {
+		return err
+	}
+
+	if C.xmlSecCryptoAppDefaultKeysMngrAdoptKey(mngrptr, keyptr) < 0 {
+		return errors.New("failed to adopt key")
+	}
+	return nil
+}
+
 func XMLSecDSigCtxVerifyRaw(ctxptr *C.xmlSecDSigCtx, nodeptr *C.xmlNode) error {
 	if C.xmlSecDSigCtxVerify(ctxptr, nodeptr) < C.int(0) {
 		return errors.New("failed to verify node")
@@ -337,6 +402,28 @@ func XMLSecDSigCtxVerifyNode(ctx PtrSource, n types.Node) error {
 	return XMLSecDSigCtxVerifyRaw(ctxptr, nodeptr)
 }
 
+func findSignatureNode(n *C.xmlNode) *C.xmlNode {
+	/* move this out to C so we can just static/const it? */
+	cname := stringToXMLChar(SignatureNode)
+	cns := stringToXMLChar(DSigNs)
+	defer C.free(unsafe.Pointer(cname))
+	defer C.free(unsafe.Pointer(cns))
+
+	return C.xmlSecFindNode(n, cname, cns)
+}
+
+func FindSignatureNode(n PtrSource) (types.Node, error) {
+	nptr, err := validNodePtr(n)
+	if err != nil {
+		return nil, err
+	}
+	signode := findSignatureNode(nptr)
+	if signode == nil {
+		return nil, errors.New("faild to find signature node")
+	}
+	return dom.WrapNode(uintptr(unsafe.Pointer(signode)))
+}
+
 func XMLSecDSigCtxVerifyDocument(ctx PtrSource, doc types.Document) error {
 	ctxptr, err := validDSigCtxPtr(ctx)
 	if err != nil {
@@ -353,16 +440,10 @@ func XMLSecDSigCtxVerifyDocument(ctx PtrSource, doc types.Document) error {
 		return err
 	}
 
-	cname := stringToXMLChar(SignatureNode)
-	cns := stringToXMLChar(DSigNs)
-	defer C.free(unsafe.Pointer(cname))
-	defer C.free(unsafe.Pointer(cns))
-
-	nodeptr := C.xmlSecFindNode(rootptr, cname, cns)
+	nodeptr := findSignatureNode(rootptr)
 	if nodeptr == nil {
 		return errors.New("failed to find start node")
 	}
-
 	return XMLSecDSigCtxVerifyRaw(ctxptr, nodeptr)
 }
 
@@ -468,6 +549,20 @@ func XMLSecTmplSignatureEnsureKeyInfo(n types.Node, id string) (types.Node, erro
 	return dom.WrapNode(uintptr(unsafe.Pointer(ret)))
 }
 
+func XMLSecTmplKeyInfoAddKeyValue(n types.Node) (types.Node, error) {
+	nptr, err := validNodePtr(n)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := C.xmlSecTmplKeyInfoAddKeyValue(nptr)
+	if ret == nil {
+		return nil, errors.New("failed to add KeyValue node")
+	}
+
+	return dom.WrapNode(uintptr(unsafe.Pointer(ret)))
+}
+
 func XMLSecTmplKeyInfoAddX509Data(n types.Node) (types.Node, error) {
 	nptr, err := validNodePtr(n)
 	if err != nil {
@@ -518,4 +613,51 @@ func XMLSecKeyDuplicate(key PtrSource) (uintptr, error) {
 		return 0, errors.New("failed to duplicate key")
 	}
 	return uintptr(unsafe.Pointer(ptr)), nil
+}
+
+func XMLSecKeysMngrCertLoadMemory(mngr PtrSource, buf []byte, format KeyDataFormat, typ KeyDataType) error {
+	mngrptr, err := validKeysMngrPtr(mngr)
+	if err != nil {
+		return err
+	}
+
+	cbuf := C.CString(string(buf))
+	defer C.free(unsafe.Pointer(cbuf))
+	rc := C.xmlSecCryptoAppKeysMngrCertLoadMemory(
+		mngrptr,
+		(*C.xmlSecByte)(unsafe.Pointer(cbuf)),
+		C.uint(len(buf)),
+		C.xmlSecKeyDataFormat(format),
+		C.xmlSecKeyDataType(typ),
+	)
+
+	if rc < 0 {
+		return errors.New("failed to load memory")
+	}
+
+	return nil
+}
+
+func XMLSecKeysMngrGetKey(mngr PtrSource, n PtrSource) (uintptr, error) {
+	mngrptr, err := validKeysMngrPtr(mngr)
+	if err != nil {
+		return 0, err
+	}
+
+	nptr, err := validNodePtr(n)
+	if err != nil {
+		return 0, err
+	}
+
+	ctxptr := C.xmlSecKeyInfoCtxCreate(mngrptr)
+	if ctxptr == nil {
+		return 0, errors.New("failed to create key info context")
+	}
+	defer C.xmlSecKeyInfoCtxDestroy(ctxptr)
+
+	keyptr := C.xmlSecKeysMngrGetKey(nptr, ctxptr)
+	if keyptr == nil {
+		return 0, errors.New("failed to get key")
+	}
+	return uintptr(unsafe.Pointer(keyptr)), nil
 }

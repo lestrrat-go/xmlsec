@@ -59,7 +59,7 @@ func ExampleDSigCtx_Sign() {
 	xmlsec.Init()
 	defer xmlsec.Shutdown()
 
-	ctx, err := dsig.NewCtx()
+	ctx, err := dsig.NewCtx(nil)
 	if err != nil {
 		log.Printf("Failed to create signature context: %s", err)
 		return

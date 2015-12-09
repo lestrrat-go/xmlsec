@@ -125,7 +125,7 @@ func TestXmlSecDSigCtx(t *testing.T) {
 	defer doc.Free()
 
 	{
-		ctx, err := dsig.NewCtx()
+		ctx, err := dsig.NewCtx(nil)
 		if !assert.NoError(t, err, "dsig.NewCtx should succeed") {
 			return
 		}
@@ -146,7 +146,7 @@ func TestXmlSecDSigCtx(t *testing.T) {
 	t.Logf("%s", signed)
 
 	{
-		ctx, err := dsig.NewCtx()
+		ctx, err := dsig.NewCtx(nil)
 		if !assert.NoError(t, err, "dsig.NewCtx should succeed") {
 			return
 		}
@@ -215,7 +215,7 @@ func TestSignature(t *testing.T) {
 		return
 	}
 
-	if !assert.NoError(t, sig.EnsureKeyInfo(), "EnsureKeyInfo succeeds") {
+	if !assert.NoError(t, sig.AddKeyValue(), "AddKeyValue succeeds") {
 		return
 	}
 
@@ -237,4 +237,30 @@ func TestSignature(t *testing.T) {
 	}
 
 	t.Logf("%s", doc.Dump(true))
+
+	verify, err := dsig.NewSignatureVerify()
+	if !assert.NoError(t, err, "NewSignatureVerify succeeds") {
+		return
+	}
+
+	if !assert.NoError(t, verify.VerifyString(doc.Dump(false)), "VerifyString succeeds") {
+		return
+	}
+}
+
+func TestKeysManager(t *testing.T) {
+	mngr, err := crypto.NewKeyManager()
+	if !assert.NoError(t, err, "NewKeyManager succeeds") {
+		return
+	}
+	defer mngr.Free()
+
+	privkey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if !assert.NoError(t, err, "Generating private key should succeed") {
+		return
+	}
+
+	if !assert.NoError(t, mngr.LoadKeyFromRSAPrivateKey(privkey), "LoadKeyFromRSAPrivateKey succeeds") {
+		return
+	}
 }

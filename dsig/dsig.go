@@ -5,11 +5,19 @@ import (
 
 	"github.com/lestrrat/go-libxml2/types"
 	"github.com/lestrrat/go-xmlsec/clib"
+	"github.com/lestrrat/go-xmlsec/crypto"
 )
 
 // NewCtx creates a new XML Signature Context
-func NewCtx() (*Ctx, error) {
-	ptr, err := clib.XMLSecDSigCtxCreate()
+func NewCtx(mngr *crypto.KeyManager) (*Ctx, error) {
+	var ptr uintptr
+	var err error
+	if mngr == nil {
+		ptr, err = clib.XMLSecDSigCtxCreate(nil)
+	} else {
+		ptr, err = clib.XMLSecDSigCtxCreate(mngr)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -104,6 +112,10 @@ func (s *Signature) AddTransform(transformID TransformID) error {
 }
 
 func (s *Signature) EnsureKeyInfo(ids ...string) error {
+	if s.keyinfo != nil {
+		return nil
+	}
+
 	var id string
 	if len(ids) > 0 {
 		id = ids[0]
@@ -116,7 +128,16 @@ func (s *Signature) EnsureKeyInfo(ids ...string) error {
 	return nil
 }
 
+func (s *Signature) AddKeyValue() error {
+	s.EnsureKeyInfo()
+	if _, err := clib.XMLSecTmplKeyInfoAddKeyValue(s.keyinfo); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *Signature) AddX509Data() error {
+	s.EnsureKeyInfo()
 	if _, err := clib.XMLSecTmplKeyInfoAddX509Data(s.keyinfo); err != nil {
 		return err
 	}
@@ -124,7 +145,7 @@ func (s *Signature) AddX509Data() error {
 }
 
 func (s *Signature) Sign(key clib.PtrSource) error {
-	ctx, err := NewCtx()
+	ctx, err := NewCtx(nil)
 	if err != nil {
 		return err
 	}

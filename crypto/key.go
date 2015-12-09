@@ -13,16 +13,16 @@ func (k Key) Pointer() uintptr {
 	return k.ptr
 }
 
-func LoadKeyFromFile(file string, format clib.KeyDataFormat) (*Key, error) {
-	ptr, err := clib.XMLSecCryptoAppKeyLoad(file, format)
+func LoadKeyFromFile(file string, format KeyDataFormat) (*Key, error) {
+	ptr, err := clib.XMLSecCryptoAppKeyLoad(file, clib.KeyDataFormat(format))
 	if err != nil {
 		return nil, err
 	}
 	return &Key{ptr: ptr}, nil
 }
 
-func LoadKeyFromBytes(data []byte, format clib.KeyDataFormat) (*Key, error) {
-	ptr, err := clib.XMLSecCryptoAppKeyLoadMemory(data, format)
+func LoadKeyFromBytes(data []byte, format KeyDataFormat) (*Key, error) {
+	ptr, err := clib.XMLSecCryptoAppKeyLoadMemory(data, clib.KeyDataFormat(format))
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +43,18 @@ func LoadKeyFromRSAPrivateKey(privkey *rsa.PrivateKey) (*Key, error) {
 	return LoadKeyFromBytes(buf.Bytes(), KeyDataFormatPem)
 }
 
-func (k *Key) LoadCertFromFile(fn string, format clib.KeyDataFormat) error {
-	return clib.XMLSecCryptoAppKeyCertLoad(k, fn, format)
+func (k *Key) LoadCertFromFile(fn string, format KeyDataFormat) error {
+	return clib.XMLSecCryptoAppKeyCertLoad(k, fn, clib.KeyDataFormat(format))
+}
+
+func (k *Key) Free() {
+	clib.XMLSecKeyDestroy(k)
+}
+
+func (k *Key) Copy() (*Key, error) {
+	keyptr, err := clib.XMLSecKeyDuplicate(k)
+	if err != nil {
+		return nil, err
+	}
+	return &Key{ptr: keyptr}, nil
 }

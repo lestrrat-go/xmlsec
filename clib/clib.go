@@ -496,3 +496,26 @@ func XMLSecCryptoAppKeyCertLoad(key PtrSource, certFile string, format KeyDataFo
 	}
 	return nil
 }
+
+func XMLSecKeyDestroy(key PtrSource) error {
+	keyptr, err := validKeyPtr(key)
+	if err != nil {
+		return err
+	}
+
+	C.xmlSecKeyDestroy(keyptr)
+	return nil
+}
+
+func XMLSecKeyDuplicate(key PtrSource) (uintptr, error) {
+	keyptr, err := validKeyPtr(key)
+	if err != nil {
+		return 0, err
+	}
+
+	ptr := C.xmlSecKeyDuplicate(keyptr)
+	if ptr == nil {
+		return 0, errors.New("failed to duplicate key")
+	}
+	return uintptr(unsafe.Pointer(ptr)), nil
+}

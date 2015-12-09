@@ -91,8 +91,7 @@ func TestXmlSecDSigCtx(t *testing.T) {
 	}
 	defer os.Remove(pubfile)
 
-	p := parser.New(parser.XMLParseDTDLoad | parser.XMLParseDTDAttr | parser.XMLParseNoEnt)
-	doc, err := p.ParseString(`<?xml version="1.0" encoding="UTF-8"?>
+	src := `<?xml version="1.0" encoding="UTF-8"?>
 <!-- XML Security Library example: Simple signature template file for sign1 example.  -->
 <Envelope xmlns="urn:envelope">
   <Data>
@@ -115,7 +114,10 @@ func TestXmlSecDSigCtx(t *testing.T) {
       <KeyName/>
     </KeyInfo>
   </Signature>
-</Envelope>`)
+</Envelope>`
+
+	p := parser.New(parser.XMLParseDTDLoad | parser.XMLParseDTDAttr | parser.XMLParseNoEnt)
+	doc, err := p.ParseString(src)
 
 	if !assert.NoError(t, err, "Parsing template should succeed") {
 		return
@@ -140,7 +142,8 @@ func TestXmlSecDSigCtx(t *testing.T) {
 		}
 	}
 
-	t.Logf("%s", doc.Dump(true))
+	signed := doc.String()
+	t.Logf("%s", signed)
 
 	{
 		ctx, err := dsig.NewCtx()
@@ -156,6 +159,24 @@ func TestXmlSecDSigCtx(t *testing.T) {
 		ctx.SetKey(key)
 
 		if !assert.NoError(t, ctx.Verify(doc), "Verify should succeed") {
+			return
+		}
+	}
+
+	{
+		verify, err := dsig.NewSignatureVerify()
+		if !assert.NoError(t, err, "NewSignatureVerify succeeds") {
+			return
+		}
+
+		if !assert.NoError(t, verify.LoadKeyFromFile(pubfile, crypto.KeyDataFormatPem), "LoadKeyFromFile succeeds") {
+			return
+		}
+
+		if !assert.NoError(t, verify.VerifyString(signed), "VerifyString succeeds") {
+			return
+		}
+		if !assert.NoError(t, verify.Verify([]byte(signed)), "Verify succeeds") {
 			return
 		}
 	}

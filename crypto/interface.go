@@ -4,6 +4,7 @@ import (
 	"github.com/lestrrat/go-xmlsec/clib"
 )
 
+type KeyDataFormat clib.KeyDataFormat
 const (
 	KeyDataFormatUnknown  = clib.KeyDataFormatUnknown
 	KeyDataFormatBinary   = clib.KeyDataFormatBinary

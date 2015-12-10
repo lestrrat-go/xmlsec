@@ -144,14 +144,16 @@ func (s *Signature) AddX509Data() error {
 	return nil
 }
 
-func (s *Signature) Sign(key clib.PtrSource) error {
-	ctx, err := NewCtx(nil)
+func (s *Signature) Sign(key *crypto.Key) error {
+	km, err := crypto.NewKeyManager()
+	ctx, err := NewCtx(km)
 	if err != nil {
 		return err
 	}
 	defer ctx.Free()
+	defer km.Free()
 
-	if err := ctx.SetKey(key); err != nil {
+	if err := km.AdoptKey(key); err != nil {
 		return err
 	}
 

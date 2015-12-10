@@ -124,6 +124,7 @@ type TransformID struct {
 var (
 	ExclC14N  = TransformID{ptr: C.xmlSecTransformExclC14NGetKlass()}
 	Enveloped = TransformID{ptr: C.xmlSecTransformEnvelopedGetKlass()}
+	InclC14N  = TransformID{ptr: C.xmlSecTransformInclC14NGetKlass()}
 	Sha1      = TransformID{ptr: C.MY_Sha1Id()}
 	RsaSha1   = TransformID{ptr: C.MY_RsaSha1Id()}
 )

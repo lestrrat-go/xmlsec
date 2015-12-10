@@ -10,6 +10,7 @@ type TransformID clib.TransformID
 
 var (
 	ExclC14N  = TransformID(clib.ExclC14N)
+	InclC14N  = TransformID(clib.InclC14N)
 	Enveloped = TransformID(clib.Enveloped)
 	Sha1      = TransformID(clib.Sha1)
 	RsaSha1   = TransformID(clib.RsaSha1)

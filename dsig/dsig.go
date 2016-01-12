@@ -59,6 +59,7 @@ func (d *Ctx) VerifyNode(n types.Node) error {
 	return clib.XMLSecDSigCtxVerifyNode(d, n)
 }
 
+// NewSignature creates a Signature object.
 func NewSignature(n types.Node, c14n, sig TransformID, id string) (*Signature, error) {
 	doc, err := n.OwnerDocument()
 	if err != nil {
@@ -84,6 +85,7 @@ func NewSignature(n types.Node, c14n, sig TransformID, id string) (*Signature, e
 	}, nil
 }
 
+// AddReference adds a Reference node to the appropriate location
 func (s *Signature) AddReference(digestMethod TransformID, id, uri, nodeType string) error {
 	rn, err := clib.XMLSecTmplSignatureAddReference(
 		s.signnode,
@@ -100,6 +102,7 @@ func (s *Signature) AddReference(digestMethod TransformID, id, uri, nodeType str
 	return nil
 }
 
+// AddTransform adds a Transform node to the appropriate location
 func (s *Signature) AddTransform(transformID TransformID) error {
 	if s.refnode == nil {
 		return errors.New("missing reference node: did you call AddReference() first?")
@@ -111,6 +114,7 @@ func (s *Signature) AddTransform(transformID TransformID) error {
 	return nil
 }
 
+// EnsureKeyInfo adds a KeyInfo node to the apprpriate location
 func (s *Signature) EnsureKeyInfo(ids ...string) error {
 	if s.keyinfo != nil {
 		return nil
@@ -128,6 +132,9 @@ func (s *Signature) EnsureKeyInfo(ids ...string) error {
 	return nil
 }
 
+// AddKeyValue adds KeyValue nodes to appropriate location. Before adding
+// these nodes, EnsureKeyInfo is called to makes ure KeyInfo node is
+// created and added.
 func (s *Signature) AddKeyValue() error {
 	s.EnsureKeyInfo()
 	if _, err := clib.XMLSecTmplKeyInfoAddKeyValue(s.keyinfo); err != nil {
@@ -136,6 +143,7 @@ func (s *Signature) AddKeyValue() error {
 	return nil
 }
 
+// AddX509Data adds a X509Data node to the apprpriate location
 func (s *Signature) AddX509Data() error {
 	s.EnsureKeyInfo()
 	if _, err := clib.XMLSecTmplKeyInfoAddX509Data(s.keyinfo); err != nil {
@@ -144,6 +152,8 @@ func (s *Signature) AddX509Data() error {
 	return nil
 }
 
+// Sign populates the signature for the payload. The signature is generated
+// using the specified key
 func (s *Signature) Sign(key *crypto.Key) error {
 	km, err := crypto.NewKeyManager()
 	ctx, err := NewCtx(km)

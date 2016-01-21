@@ -58,3 +58,7 @@ func (k *Key) Copy() (*Key, error) {
 	}
 	return &Key{ptr: keyptr}, nil
 }
+
+func (k Key) HasX509() error {
+	return clib.XMLSecKeyHasX509(k)
+}

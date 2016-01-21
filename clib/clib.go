@@ -92,6 +92,15 @@ static inline xmlSecTransformId MY_RsaSha1Id() {
 	return xmlSecTransformRsaSha1Id;
 }
 
+static int
+go_xmlsec_has_X509(xmlSecKey *key) {
+	xmlSecKeyDataPtr data = xmlSecKeyGetData(key, xmlSecKeyDataX509Id);
+	if (data == NULL) {
+		return 0;
+	}
+	return 1;
+}
+
 */
 import "C"
 import (
@@ -592,6 +601,20 @@ func XMLSecCryptoAppKeyCertLoad(key PtrSource, certFile string, format KeyDataFo
 	}
 	return nil
 }
+
+func XMLSecKeyHasX509(key PtrSource) error {
+	keyptr, err := validKeyPtr(key)
+	if err != nil {
+		return err
+	}
+
+	if C.go_xmlsec_has_X509(keyptr) != 1 {
+		return errors.New("not valid: no X509 data")
+	}
+
+	return nil
+}
+
 
 func XMLSecKeyDestroy(key PtrSource) error {
 	keyptr, err := validKeyPtr(key)

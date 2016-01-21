@@ -43,6 +43,24 @@ func LoadKeyFromRSAPrivateKey(privkey *rsa.PrivateKey) (*Key, error) {
 	return LoadKeyFromBytes(buf.Bytes(), KeyDataFormatPem)
 }
 
+func LoadCertFromFile(fn string, format KeyDataFormat) (*Key, error) {
+	key, err := NewKey()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if key == nil || err == nil {
+			return
+		}
+		key.Free()
+	}()
+
+	if err = key.LoadCertFromFile(fn, format); err != nil {
+		return nil, err
+	}
+	return key, nil
+}
+
 func (k *Key) LoadCertFromFile(fn string, format KeyDataFormat) error {
 	return clib.XMLSecCryptoAppKeyCertLoad(k, fn, clib.KeyDataFormat(format))
 }

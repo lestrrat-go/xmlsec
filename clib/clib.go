@@ -93,8 +93,35 @@ static inline xmlSecTransformId MY_RsaSha1Id() {
 }
 
 static int
-go_xmlsec_has_X509(xmlSecKey *key) {
+go_xmlsec_key_has_X509(xmlSecKey *key) {
 	xmlSecKeyDataPtr data = xmlSecKeyGetData(key, xmlSecKeyDataX509Id);
+	if (data == NULL) {
+		return 0;
+	}
+	return 1;
+}
+
+static int
+go_xmlsec_key_has_dsa(xmlSecKey *key) {
+	xmlSecKeyDataPtr data = xmlSecKeyGetData(key, xmlSecKeyDataDsaId);
+	if (data == NULL) {
+		return 0;
+	}
+	return 1;
+}
+
+static int
+go_xmlsec_key_has_ecdsa(xmlSecKey *key) {
+	xmlSecKeyDataPtr data = xmlSecKeyGetData(key, xmlSecKeyDataEcdsaId);
+	if (data == NULL) {
+		return 0;
+	}
+	return 1;
+}
+
+static int
+go_xmlsec_key_has_rsa(xmlSecKey *key) {
+	xmlSecKeyDataPtr data = xmlSecKeyGetData(key, xmlSecKeyDataRsaId);
 	if (data == NULL) {
 		return 0;
 	}
@@ -608,13 +635,47 @@ func XMLSecKeyHasX509(key PtrSource) error {
 		return err
 	}
 
-	if C.go_xmlsec_has_X509(keyptr) != 1 {
+	if C.go_xmlsec_key_has_X509(keyptr) != 1 {
 		return errors.New("not valid: no X509 data")
 	}
-
 	return nil
 }
 
+func XMLSecKeyHasRsaKey(key PtrSource) error {
+	keyptr, err := validKeyPtr(key)
+	if err != nil {
+		return err
+	}
+
+	if C.go_xmlsec_key_has_rsa(keyptr) != 1 {
+		return errors.New("not valid: no rsa key")
+	}
+	return nil
+}
+
+func XMLSecKeyHasDsaKey(key PtrSource) error {
+	keyptr, err := validKeyPtr(key)
+	if err != nil {
+		return err
+	}
+
+	if C.go_xmlsec_key_has_dsa(keyptr) != 1 {
+		return errors.New("not valid: no dsa key")
+	}
+	return nil
+}
+
+func XMLSecKeyHasEcdsaKey(key PtrSource) error {
+	keyptr, err := validKeyPtr(key)
+	if err != nil {
+		return err
+	}
+
+	if C.go_xmlsec_key_has_ecdsa(keyptr) != 1 {
+		return errors.New("not valid: no ecdsa key")
+	}
+	return nil
+}
 
 func XMLSecKeyDestroy(key PtrSource) error {
 	keyptr, err := validKeyPtr(key)

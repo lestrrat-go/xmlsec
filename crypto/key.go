@@ -62,3 +62,16 @@ func (k *Key) Copy() (*Key, error) {
 func (k Key) HasX509() error {
 	return clib.XMLSecKeyHasX509(k)
 }
+
+func (k Key) HasRsaKey() error {
+	return clib.XMLSecKeyHasRsaKey(k)
+}
+
+func (k Key) HasDsaKey() error {
+	return clib.XMLSecKeyHasDsaKey(k)
+}
+
+func (k Key) HasEcdsaKey() error {
+	return clib.XMLSecKeyHasEcdsaKey(k)
+}
+

@@ -47,6 +47,14 @@ func (k *Key) LoadCertFromFile(fn string, format KeyDataFormat) error {
 	return clib.XMLSecCryptoAppKeyCertLoad(k, fn, clib.KeyDataFormat(format))
 }
 
+func NewKey() (*Key, error) {
+	ptr, err := clib.XMLSecKeyCreate()
+	if err != nil {
+		return nil, err
+	}
+	return &Key{ptr: ptr}, nil
+}
+
 func (k *Key) Free() {
 	clib.XMLSecKeyDestroy(k)
 }

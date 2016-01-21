@@ -677,6 +677,14 @@ func XMLSecKeyHasEcdsaKey(key PtrSource) error {
 	return nil
 }
 
+func XMLSecKeyCreate() (uintptr, error) {
+	ptr := C.xmlSecKeyCreate()
+	if ptr == nil {
+		return 0, errors.New("failed to create key")
+	}
+	return uintptr(unsafe.Pointer(ptr)), nil
+}
+
 func XMLSecKeyDestroy(key PtrSource) error {
 	keyptr, err := validKeyPtr(key)
 	if err != nil {

@@ -2,6 +2,14 @@ language: go
 go:
   - 1.5
   - tip
+addons:
+  apt:
+    packages:
+      - libnspr4
+      - libnspr4-dev
+      - libnss3
+      - libnss3-1d
+      - libnss3-dev
 sudo: true
 before_install:
   - travis_retry wget --no-check-certificate -O /dev/stdout http://www.aleksey.com/xmlsec/download/xmlsec1-1.2.20.tar.gz | tar xzv

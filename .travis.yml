@@ -2,8 +2,17 @@ language: go
 go:
   - 1.5
   - tip
-sudo: false
+sudo: true
 addons:
   apt:
     packages:
-      - libxmlsec1-dev
+      - libc6-dev
+      - libgnutls-dev
+      - libnss3-dev
+      - libssl-dev
+      - libxml2-dev
+      - libxslt1-dev
+before_install:
+  - travis_retry wget --no-check-certificate -O /dev/stdout http://www.aleksey.com/xmlsec/download/xmlsec1-1.2.20.tar.gz | tar xzv
+  - cd xmlsec1-1.2.20 && ./configure && make && sudo make install && sudo ldconfig && cd .. && rm -rf xmlsec1-1.2.20*
+script: go test -v -x ./...

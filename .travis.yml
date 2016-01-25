@@ -5,6 +5,8 @@ go:
 addons:
   apt:
     packages:
+      - libxslt1-dev
+      - libssl-dev
       - libnspr4
       - libnspr4-dev
       - libnss3

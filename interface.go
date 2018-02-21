@@ -1,7 +1,7 @@
 package xmlsec
 
 import (
-	"github.com/lestrrat/go-xmlsec/clib"
+	"github.com/lestrrat-go/xmlsec/clib"
 )
 
 const (

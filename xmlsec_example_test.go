@@ -9,10 +9,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/lestrrat/go-libxml2/parser"
-	"github.com/lestrrat/go-xmlsec"
-	"github.com/lestrrat/go-xmlsec/crypto"
-	"github.com/lestrrat/go-xmlsec/dsig"
+	"github.com/lestrrat-go/libxml2/parser"
+	"github.com/lestrrat-go/xmlsec"
+	"github.com/lestrrat-go/xmlsec/crypto"
+	"github.com/lestrrat-go/xmlsec/dsig"
 )
 
 func ExampleSignature_Sign() {

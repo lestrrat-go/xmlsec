@@ -10,11 +10,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/lestrrat/go-libxml2/dom"
-	"github.com/lestrrat/go-libxml2/parser"
-	"github.com/lestrrat/go-xmlsec"
-	"github.com/lestrrat/go-xmlsec/crypto"
-	"github.com/lestrrat/go-xmlsec/dsig"
+	"github.com/lestrrat-go/libxml2/dom"
+	"github.com/lestrrat-go/libxml2/parser"
+	"github.com/lestrrat-go/xmlsec"
+	"github.com/lestrrat-go/xmlsec/crypto"
+	"github.com/lestrrat-go/xmlsec/dsig"
 	"github.com/stretchr/testify/assert"
 )
 

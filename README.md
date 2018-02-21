@@ -1,10 +1,10 @@
-# go-xmlsec
+# xmlsec
 
-[![Build Status](https://travis-ci.org/lestrrat/go-xmlsec.svg?branch=master)](https://travis-ci.org/lestrrat/go-xmlsec)
+xmlsec is a Go binding for XML Security Library (https://www.aleksey.com/xmlsec/index.html)
 
-[![GoDoc](https://godoc.org/github.com/lestrrat/go-xmlsec?status.svg)](https://godoc.org/github.com/lestrrat/go-xmlsec)
+[![Build Status](https://travis-ci.org/lestrrat-go/xmlsec.svg?branch=master)](https://travis-ci.org/lestrrat-go/xmlsec)
 
-go-xmlsec is a Go binding for XML Security Library (https://www.aleksey.com/xmlsec/index.html)
+[![GoDoc](https://godoc.org/github.com/lestrrat-go/xmlsec?status.svg)](https://godoc.org/github.com/lestrrat-go/xmlsec)
 
 ## Status
 
@@ -24,10 +24,10 @@ import (
   "log"
   "os"
 
-  "github.com/lestrrat/go-libxml2/parser"
-  "github.com/lestrrat/go-xmlsec"
-  "github.com/lestrrat/go-xmlsec/crypto"
-  "github.com/lestrrat/go-xmlsec/dsig"
+  "github.com/lestrrat-go/libxml2/parser"
+  "github.com/lestrrat-go/xmlsec"
+  "github.com/lestrrat-go/xmlsec/crypto"
+  "github.com/lestrrat-go/xmlsec/dsig"
 )
 
 func ExampleSignature_Sign() {
@@ -165,7 +165,7 @@ machine (OS X 10.10.5 + go 1.5.1), I get this:
 
 ```
 shoebill% go test .
-# github.com/lestrrat/go-xmlsec
+# github.com/lestrrat-go/xmlsec
 In file included from <built-in>:326:
 <command line>:1:24: warning: missing terminating '"' character [-Winvalid-pp-token]
 ```
@@ -175,7 +175,7 @@ but we don't do that in this library because it makes it unportable.
 
 ## See Also
 
-* https://github.com/lestrrat/go-libxml2
+* https://github.com/lestrrat-go/libxml2
 * https://www.aleksey.com/xmlsec/index.html
 
 ## Credits

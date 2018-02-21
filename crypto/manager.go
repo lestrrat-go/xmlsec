@@ -3,8 +3,8 @@ package crypto
 import (
 	"crypto/rsa"
 
-	"github.com/lestrrat/go-libxml2/types"
-	"github.com/lestrrat/go-xmlsec/clib"
+	"github.com/lestrrat-go/libxml2/types"
+	"github.com/lestrrat-go/xmlsec/clib"
 )
 
 func NewKeyManager() (*KeyManager, error) {

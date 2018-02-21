@@ -6,7 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 
-	"github.com/lestrrat/go-xmlsec/clib"
+	"github.com/lestrrat-go/xmlsec/clib"
 )
 
 func (k Key) Pointer() uintptr {

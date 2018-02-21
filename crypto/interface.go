@@ -1,7 +1,7 @@
 package crypto
 
 import (
-	"github.com/lestrrat/go-xmlsec/clib"
+	"github.com/lestrrat-go/xmlsec/clib"
 )
 
 type KeyDataType clib.KeyDataType

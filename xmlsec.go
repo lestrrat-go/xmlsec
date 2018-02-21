@@ -3,7 +3,7 @@
 Package xmlsec is a Go wrapper for xmlsec1 C library (https://www.aleksey.com/xmlsec/index.html)
 
 In order to use this library, you need xmlsec1, libxml2, libxslt,
-and go-libxml2 (https://github.com/lestrrat/go-libxml2)
+and go-libxml2 (https://github.com/lestrrat-go/libxml2)
 
 */
 package xmlsec
@@ -12,7 +12,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/lestrrat/go-xmlsec/clib"
+	"github.com/lestrrat-go/xmlsec/clib"
 )
 
 var initLock = sync.Mutex{}

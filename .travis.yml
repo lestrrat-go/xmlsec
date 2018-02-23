@@ -16,5 +16,5 @@ addons:
       - libnss3-dev
 sudo: true
 before_install:
-  - travis_retry wget --no-check-certificate -O /dev/stdout http://www.aleksey.com/xmlsec/download/xmlsec1-1.2.20.tar.gz | tar xzv
-  - cd xmlsec1-1.2.20 && ./configure && make && sudo make install && sudo ldconfig && cd ..
+  - travis_retry wget --no-check-certificate -O /dev/stdout http://www.aleksey.com/xmlsec/download/xmlsec1-1.2.25.tar.gz | tar xzv
+  - cd xmlsec1-1.2.25 && ./configure && make && sudo make install && sudo ldconfig && cd ..
